@@ -1,3 +1,8 @@
+!!
+This is a fork of [terezka/line-charts](https://package.elm-lang.org/packages/terezka/line-charts/latest/), created expedite some fixes that haven't been merged yet. These are:
+* https://github.com/terezka/line-charts/pull/58
+!!
+
 # Line Charts
 
 A opinionated library for plotting line charts in SVG. Written in all Elm. See [demo.](https://terezka.github.io/line-charts/)

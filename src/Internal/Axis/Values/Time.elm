@@ -5,7 +5,7 @@ module Internal.Axis.Values.Time exposing (values)
 import Internal.Coordinate as Coordinate
 import Internal.Utils as Utils
 import LineChart.Axis.Tick exposing (Interval, Time, Unit(..))
-import Time
+import Time exposing (Month(..))
 import Time.Extra
 
 
@@ -135,9 +135,34 @@ findBestMultiple interval unit =
 -}
 beginAt : Time.Zone -> Time.Posix -> Unit -> Int -> Time.Posix
 beginAt zone min unit multiple =
-    min
-        |> Time.Extra.add (toExtraUnit unit) multiple zone
-        |> Time.Extra.ceiling (toExtraUnit unit) zone
+    let
+        firstWholeUnit : Time.Posix
+        firstWholeUnit =
+            Time.Extra.ceiling (toExtraUnit unit) zone min
+
+        firstInUnit : Int
+        firstInUnit =
+            unitFunc unit firstWholeUnit
+
+        multiMod : Int -> Int
+        multiMod x =
+            modBy multiple
+                (multiple - modBy multiple x)
+
+        addAmount : Int
+        addAmount =
+            case unit of
+                Month ->
+                    multiMod (firstInUnit - 1)
+
+                Day ->
+                    multiMod (firstInUnit - 1)
+
+                _ ->
+                    multiMod firstInUnit
+    in
+    firstWholeUnit
+        |> Time.Extra.add (toExtraUnit unit) addAmount zone
 
 
 next : Time.Zone -> Time.Posix -> Unit -> Int -> Time.Posix
@@ -216,7 +241,7 @@ multiples : Unit -> List Int
 multiples unit =
     case unit of
         Millisecond ->
-            [ 1, 2, 5, 10, 20, 25, 50, 100, 200, 500 ]
+            [ 2, 5, 10, 20, 25, 50, 100, 200, 500 ]
 
         Second ->
             [ 1, 2, 5, 10, 15, 30 ]
@@ -228,10 +253,10 @@ multiples unit =
             [ 1, 2, 3, 4, 6, 8, 12 ]
 
         Day ->
-            [ 1, 2 ]
+            [ 1, 2, 7, 14 ]
 
         Month ->
-            [ 1, 2, 3, 4, 6 ]
+            [ 1, 2, 3, 6 ]
 
         Year ->
             [ 1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000, 10000 ]
@@ -285,3 +310,70 @@ floatToPosix ms =
 posixsToFloat : Time.Posix -> Float
 posixsToFloat posix =
     Basics.toFloat (Time.posixToMillis posix)
+
+
+unitFunc : Unit -> (Time.Posix -> Int)
+unitFunc unit_ =
+    case unit_ of
+        Millisecond ->
+            Time.toMillis Time.utc
+
+        Second ->
+            Time.toSecond Time.utc
+
+        Minute ->
+            Time.toMinute Time.utc
+
+        Hour ->
+            Time.toHour Time.utc
+
+        Day ->
+            Time.toDay Time.utc
+
+        Month ->
+            \time ->
+                Time.toMonth Time.utc time
+                    |> monthToInt
+
+        Year ->
+            Time.toSecond Time.utc
+
+
+monthToInt : Month -> Int
+monthToInt month =
+    case month of
+        Jan ->
+            1
+
+        Feb ->
+            2
+
+        Mar ->
+            3
+
+        Apr ->
+            4
+
+        May ->
+            5
+
+        Jun ->
+            6
+
+        Jul ->
+            7
+
+        Aug ->
+            8
+
+        Sep ->
+            9
+
+        Oct ->
+            10
+
+        Nov ->
+            11
+
+        Dec ->
+            12

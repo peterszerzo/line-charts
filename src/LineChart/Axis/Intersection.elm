@@ -2,6 +2,7 @@ module LineChart.Axis.Intersection exposing (Config, default, atOrigin, at, cust
 
 {-|
 
+
 ## Where is the intersection?
 
 The intersection is where your two axis lines meet. By default this is at
@@ -14,10 +15,8 @@ not be as illustated below.
 
 -}
 
-
 import Internal.Axis.Intersection as Intersection
 import LineChart.Coordinate as Coordinate
-
 
 
 {-| Use in the `LineChart.Config` passed to `LineChart.viewCustom`.
@@ -31,53 +30,49 @@ import LineChart.Coordinate as Coordinate
 
 -}
 type alias Config =
-  Intersection.Config
+    Intersection.Config
 
 
 {-| Sets the intersection at the minimum on both the range and domain.
 
     intersectionConfig : Intersection.Config
     intersectionConfig =
-      Intersection.default
-
+        Intersection.default
 
 _See the full example [here](https://github.com/terezka/line-charts/blob/master/examples/Docs/Intersection/Example1.elm)._
 
 -}
 default : Config
 default =
-  Intersection.default
+    Intersection.default
 
 
 {-| Sets the intersection as close to the origin as your range and domain allows.
 
     intersectionConfig : Intersection.Config
     intersectionConfig =
-      Intersection.atOrigin
-
+        Intersection.atOrigin
 
 _See the full example [here](https://github.com/terezka/line-charts/blob/master/examples/Docs/Intersection/Example1.elm)._
-
 
 -}
 atOrigin : Config
 atOrigin =
-  Intersection.atOrigin
+    Intersection.atOrigin
 
 
 {-| Sets the intersection to your chosen x and y respectivily.
 
     intersectionConfig : Intersection.Config
     intersectionConfig =
-      Intersection.at 0 3
-
+        Intersection.at 0 3
 
 _See the full example [here](https://github.com/terezka/line-charts/blob/master/examples/Docs/Intersection/Example1.elm)._
 
 -}
 at : Float -> Float -> Config
 at =
-  Intersection.at
+    Intersection.at
 
 
 {-| Sets the intersection to your chosen x and y, given the range and domain
@@ -85,15 +80,15 @@ respectivily.
 
     intersectionConfig : Intersection.Config
     intersectionConfig =
-      Intersection.custom .min middle
+        Intersection.custom .min middle
 
     middle : Coordinate.Range -> Float
     middle { min, max } =
-      min + (max - min) / 2
+        min + (max - min) / 2
 
 _See the full example [here](https://github.com/terezka/line-charts/blob/master/examples/Docs/Intersection/Example1.elm)._
 
 -}
 custom : (Coordinate.Range -> Float) -> (Coordinate.Range -> Float) -> Config
 custom =
-  Intersection.custom
+    Intersection.custom

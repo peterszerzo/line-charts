@@ -1,33 +1,41 @@
 module Internal.Axis.Tick exposing
-  ( Config, Properties, Direction(..), isPositive
-  , custom, int, float, long, gridless, labelless, opposite
-  , properties
-  )
+    ( Config
+    , Direction(..)
+    , Properties
+    , custom
+    , float
+    , gridless
+    , int
+    , isPositive
+    , labelless
+    , long
+    , opposite
+    , properties
+    )
 
 {-| -}
 
-import Svg exposing (Svg, Attribute)
+import Color
 import Internal.Svg as Svg
 import LineChart.Colors as Colors
-import Color
-
+import Svg exposing (Attribute, Svg)
 
 
 {-| -}
-type Config msg =
-  Config (Properties msg)
+type Config msg
+    = Config (Properties msg)
 
 
 {-| -}
 type alias Properties msg =
-  { position : Float
-  , color : Color.Color
-  , width : Float
-  , length : Float
-  , grid : Bool
-  , direction : Direction
-  , label : Maybe (Svg msg)
-  }
+    { position : Float
+    , color : Color.Color
+    , width : Float
+    , length : Float
+    , grid : Bool
+    , direction : Direction
+    , label : Maybe (Svg msg)
+    }
 
 
 
@@ -36,8 +44,8 @@ type alias Properties msg =
 
 {-| -}
 type Direction
-  = Negative
-  | Positive
+    = Negative
+    | Positive
 
 
 
@@ -46,9 +54,12 @@ type Direction
 
 isPositive : Direction -> Bool
 isPositive direction =
-  case direction of
-    Positive -> True
-    Negative -> False
+    case direction of
+        Positive ->
+            True
+
+        Negative ->
+            False
 
 
 
@@ -58,91 +69,91 @@ isPositive direction =
 {-| -}
 int : Int -> Config msg
 int n =
-  custom
-    { position = toFloat n
-    , color = Colors.gray
-    , width = 1
-    , length = 5
-    , grid = True
-    , direction = Negative
-    , label = Just <| Svg.label "inherit" (String.fromInt n)
-    }
+    custom
+        { position = toFloat n
+        , color = Colors.gray
+        , width = 1
+        , length = 5
+        , grid = True
+        , direction = Negative
+        , label = Just <| Svg.label "inherit" (String.fromInt n)
+        }
 
 
 {-| -}
 float : Float -> Config msg
 float n =
-  custom
-    { position = n
-    , color = Colors.gray
-    , width = 1
-    , length = 5
-    , grid = True
-    , direction = Negative
-    , label = Just <| Svg.label "inherit" (String.fromFloat n)
-    }
+    custom
+        { position = n
+        , color = Colors.gray
+        , width = 1
+        , length = 5
+        , grid = True
+        , direction = Negative
+        , label = Just <| Svg.label "inherit" (String.fromFloat n)
+        }
 
 
 {-| -}
 gridless : Float -> Config msg
 gridless n =
-  custom
-    { position = n
-    , color = Colors.gray
-    , width = 1
-    , length = 5
-    , grid = False
-    , direction = Negative
-    , label = Just <| Svg.label "inherit" (String.fromFloat n)
-    }
+    custom
+        { position = n
+        , color = Colors.gray
+        , width = 1
+        , length = 5
+        , grid = False
+        , direction = Negative
+        , label = Just <| Svg.label "inherit" (String.fromFloat n)
+        }
 
 
 {-| -}
 labelless : Float -> Config msg
 labelless n =
-  custom
-    { position = n
-    , color = Colors.gray
-    , width = 1
-    , length = 5
-    , grid = True
-    , direction = Negative
-    , label = Nothing
-    }
+    custom
+        { position = n
+        , color = Colors.gray
+        , width = 1
+        , length = 5
+        , grid = True
+        , direction = Negative
+        , label = Nothing
+        }
 
 
 {-| -}
 long : Float -> Config msg
 long n =
-  custom
-    { position = n
-    , color = Colors.gray
-    , width = 1
-    , length = 20
-    , grid = True
-    , direction = Negative
-    , label = Just <| Svg.label "inherit" (String.fromFloat n)
-    }
+    custom
+        { position = n
+        , color = Colors.gray
+        , width = 1
+        , length = 20
+        , grid = True
+        , direction = Negative
+        , label = Just <| Svg.label "inherit" (String.fromFloat n)
+        }
 
 
 {-| -}
 opposite : Float -> Config msg
 opposite n =
-  custom
-    { position = n
-    , color = Colors.gray
-    , width = 1
-    , length = 5
-    , grid = True
-    , direction = Positive
-    , label = Just <| Svg.label "inherit" (String.fromFloat n)
-    }
+    custom
+        { position = n
+        , color = Colors.gray
+        , width = 1
+        , length = 5
+        , grid = True
+        , direction = Positive
+        , label = Just <| Svg.label "inherit" (String.fromFloat n)
+        }
 
 
 {-| -}
 custom : Properties msg -> Config msg
 custom =
-  Config
+    Config
 
 
 
@@ -152,4 +163,4 @@ custom =
 {-| -}
 properties : Config msg -> Properties msg
 properties (Config properties_) =
-  properties_
+    properties_

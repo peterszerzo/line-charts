@@ -1,16 +1,11 @@
 module LineChart.Coordinate exposing
-  ( Frame, Size
-  , System, Range
-  , Point, toSvg, toData
-  , toSvgX, toSvgY
-  , toDataX, toDataY
-  , scaleSvgX, scaleSvgY
-  , scaleDataX, scaleDataY
-  )
+    ( System, Frame, Size, Range
+    , Point, toSvg, toData
+    , toSvgX, toSvgY, toDataX, toDataY
+    , scaleSvgX, scaleSvgY, scaleDataX, scaleDataY
+    )
 
-{-|
-
-**Data-space and SVG-space**
+{-| **Data-space and SVG-space**
 
 Data-space is the regular cartesian coordinate system, the coordinate system you
 probably learned about in school. The x axis goes horizontally and the numbers
@@ -40,13 +35,19 @@ this module!
 
 @docs System, Frame, Size, Range
 
+
 # Translation
 
+
 ## Point
+
 @docs Point, toSvg, toData
 
+
 ## Single value
+
 @docs toSvgX, toSvgY, toDataX, toDataY
+
 
 # Scaling
 
@@ -54,24 +55,28 @@ Scaling is different from translating in that it does not take a position as
 it's input, but a _distance_. Translating a position takes the frame into
 account, scaling doesn't.
 
+
     system : System
     system =
-      { frame = Frame (Margin 10 10 10 10) (Size 100 100)
-      , x = Range 0 10
-      , y = Range 0 10
-      }
+        { frame = Frame (Margin 10 10 10 10) (Size 100 100)
+        , x = Range 0 10
+        , y = Range 0 10
+        }
 
     data : Point
     data =
-      Point 2 3
+        Point 2 3
 
     dataXinSvg : Float
     dataXinSvg =
-      toSvgX system data.x    -- 30 (margin.left + 2 * 100 / 10)
+        toSvgX system data.x
 
+    -- 30 (margin.left + 2 * 100 / 10)
     dataXinSvg : Float
     dataXinSvg =
-      scaleSvgX system data.x -- 20 (2 * 100 / 10)
+        scaleSvgX system data.x
+
+    -- 20 (2 * 100 / 10)
 
 @docs scaleSvgX, scaleSvgY, scaleDataX, scaleDataY
 
@@ -81,21 +86,20 @@ import Internal.Coordinate exposing (..)
 import LineChart.Container as Container
 
 
-
 {-| Specifies the size and margins of your chart.
 -}
 type alias Frame =
-  { margin : Container.Margin
-  , size : Size
-  }
+    { margin : Container.Margin
+    , size : Size
+    }
 
 
 {-| The size (px) of your chart.
 -}
 type alias Size =
-  { width : Float
-  , height : Float
-  }
+    { width : Float
+    , height : Float
+    }
 
 
 
@@ -125,9 +129,9 @@ type alias System =
 {-| These are minimum and maximum values that make up a range.
 -}
 type alias Range =
-  { min : Float
-  , max : Float
-  }
+    { min : Float
+    , max : Float
+    }
 
 
 
@@ -138,28 +142,28 @@ type alias Range =
 -}
 toSvgX : System -> Float -> Float
 toSvgX system value =
-  scaleSvgX system (value - system.x.min) + system.frame.margin.left
+    scaleSvgX system (value - system.x.min) + system.frame.margin.left
 
 
 {-| Translate a y-coordinate from data-space to SVG-space.
 -}
 toSvgY : System -> Float -> Float
 toSvgY system value =
-  scaleSvgY system (system.y.max - value) + system.frame.margin.top
+    scaleSvgY system (system.y.max - value) + system.frame.margin.top
 
 
 {-| Translate a x-coordinate from SVG-space to data-space.
 -}
 toDataX : System -> Float -> Float
 toDataX system value =
-  system.x.min + scaleDataX system (value - system.frame.margin.left)
+    system.x.min + scaleDataX system (value - system.frame.margin.left)
 
 
 {-| Translate a y-coordinate from SVG-space to data-space.
 -}
 toDataY : System -> Float -> Float
 toDataY system value =
-  system.y.max - scaleDataY system (value - system.frame.margin.top)
+    system.y.max - scaleDataY system (value - system.frame.margin.top)
 
 
 
@@ -170,28 +174,28 @@ toDataY system value =
 -}
 scaleSvgX : System -> Float -> Float
 scaleSvgX system value =
-  value * (lengthX system) / (reachX system)
+    value * lengthX system / reachX system
 
 
 {-| Scale a y-value from data-space to SVG-space.
 -}
 scaleSvgY : System -> Float -> Float
 scaleSvgY system value =
-  value * (lengthY system) / (reachY system)
+    value * lengthY system / reachY system
 
 
 {-| Scale a x-value from SVG-space to data-space.
 -}
 scaleDataX : System -> Float -> Float
 scaleDataX system value =
-  value * (reachX system) / (lengthX system)
+    value * reachX system / lengthX system
 
 
 {-| Scale a y-value from SVG-space to data-space.
 -}
 scaleDataY : System -> Float -> Float
 scaleDataY system value =
-  value * (reachY system) / (lengthY system)
+    value * reachY system / lengthY system
 
 
 
@@ -200,24 +204,24 @@ scaleDataY system value =
 
 {-| -}
 type alias Point =
-  { x : Float
-  , y : Float
-  }
+    { x : Float
+    , y : Float
+    }
 
 
 {-| Translates a data-space point to a SVG-space point.
 -}
 toSvg : System -> Point -> Point
 toSvg system point =
-  { x = toSvgX system point.x
-  , y = toSvgY system point.y
-  }
+    { x = toSvgX system point.x
+    , y = toSvgY system point.y
+    }
 
 
 {-| Translates a SVG-space point to a data-space point.
 -}
 toData : System -> Point -> Point
 toData system point =
-  { x = toDataX system point.x
-  , y = toDataY system point.y
-  }
+    { x = toDataX system point.x
+    , y = toDataY system point.y
+    }

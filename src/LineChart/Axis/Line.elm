@@ -1,22 +1,16 @@
-module LineChart.Axis.Line exposing
-  ( Config, default, full, rangeFrame, none
-  , Properties, custom
-  )
+module LineChart.Axis.Line exposing (Config, default, full, rangeFrame, none, custom, Properties)
 
-{-|
-
-_If you're confused as to what "axis range" and "data range" means,
+{-| _If you're confused as to what "axis range" and "data range" means,
 check out `Axis.Range` for an explanation!_
 
 @docs Config, default, full, rangeFrame, none, custom, Properties
 
 -}
 
-import Svg exposing (Attribute)
-import LineChart.Coordinate as Coordinate
-import Internal.Axis.Line as Line
 import Color
-
+import Internal.Axis.Line as Line
+import LineChart.Coordinate as Coordinate
+import Svg exposing (Attribute)
 
 
 {-| This configuration is part of the
@@ -34,63 +28,63 @@ _See full example [here](https://github.com/terezka/line-charts/blob/master/exam
 
 -}
 type alias Config msg =
-  Line.Config msg
+    Line.Config msg
 
 
 {-| Draws the full length of your axis range.
 
     axisLineConfig : AxisLine.Config msg
     axisLineConfig =
-      AxisLine.default
+        AxisLine.default
 
 _See full example [here](https://github.com/terezka/line-charts/blob/master/examples/Docs/AxisLine/Example1.elm)._
 
 -}
 default : Config msg
 default =
-  Line.default
+    Line.default
 
 
 {-| Same as the default, except you get to pick the color.
 
     axisLineConfig : AxisLine.Config msg
     axisLineConfig =
-      AxisLine.full Color.red
+        AxisLine.full Color.red
 
 _See full example [here](https://github.com/terezka/line-charts/blob/master/examples/Docs/AxisLine/Example1.elm)._
 
 -}
 full : Color.Color -> Config msg
 full =
-  Line.full
+    Line.full
 
 
 {-| Draws the full length of your data range in your given color.
 
     axisLineConfig : AxisLine.Config msg
     axisLineConfig =
-      AxisLine.rangeFrame Color.red
+        AxisLine.rangeFrame Color.red
 
 _See full example [here](https://github.com/terezka/line-charts/blob/master/examples/Docs/AxisLine/Example1.elm)._
 
 -}
 rangeFrame : Color.Color -> Config msg
 rangeFrame =
-  Line.rangeFrame
+    Line.rangeFrame
 
 
 {-| Removes the axis line entirely.
 
     axisLineConfig : AxisLine.Config msg
     axisLineConfig =
-      AxisLine.none
+        AxisLine.none
 
 _See full example [here](https://github.com/terezka/line-charts/blob/master/examples/Docs/AxisLine/Example1.elm)._
 
 -}
 none : Config msg
 none =
-  Line.none
+    Line.none
 
 
 
@@ -99,12 +93,12 @@ none =
 
 {-| -}
 type alias Properties msg =
-  { color : Color.Color
-  , width : Float
-  , events : List (Attribute msg)
-  , start : Float
-  , end : Float
-  }
+    { color : Color.Color
+    , width : Float
+    , events : List (Attribute msg)
+    , start : Float
+    , end : Float
+    }
 
 
 {-| Given your data range and axis range respectivily, define your own
@@ -112,18 +106,18 @@ axis line configuration.
 
     axisLineConfig : AxisLine.Config msg
     axisLineConfig =
-      AxisLine.custom <| \dataRange axisRange ->
-        { color = Colors.gray
-        , width = 2
-        , events = []
-        , start = dataRange.min
-        , end = 5
-        }
+        AxisLine.custom <|
+            \dataRange axisRange ->
+                { color = Colors.gray
+                , width = 2
+                , events = []
+                , start = dataRange.min
+                , end = 5
+                }
 
 _See full example [here](https://github.com/terezka/line-charts/blob/master/examples/Docs/AxisLine/Example1.elm)._
-
 
 -}
 custom : (Coordinate.Range -> Coordinate.Range -> Properties msg) -> Config msg
 custom =
-  Line.custom
+    Line.custom

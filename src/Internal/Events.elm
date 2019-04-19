@@ -1,9 +1,31 @@
 module Internal.Events exposing
-    ( Config, default, hoverMany, hoverOne, click, custom
-    , Event, onClick, onMouseMove, onMouseUp, onMouseDown, onMouseLeave, on, onWithOptions, Options
-    , Decoder, getSvg, getData, getNearest, getNearestX, getWithin, getWithinX
-    , map, map2, map3
-    -- INTERNAL
+    ( Config
+    , Decoder
+    , Event
+    , Options
+    , click
+    , custom
+    , default
+    , getData
+    , getNearest
+    , getNearestX
+    , getSvg
+    , getWithin
+    , getWithinX
+    , hoverMany
+    , hoverOne
+    , map
+    , map2
+    ,  map3
+       -- INTERNAL
+
+    , on
+    , onClick
+    , onMouseDown
+    , onMouseLeave
+    , onMouseMove
+    , onMouseUp
+    , onWithOptions
     , toChartAttributes
     , toContainerAttributes
     )
@@ -11,58 +33,57 @@ module Internal.Events exposing
 {-| -}
 
 import DOM
-import Svg
-import Svg.Events
 import Html.Events
-import LineChart.Coordinate as Coordinate exposing (..)
 import Internal.Data as Data
 import Internal.Utils exposing (withFirst)
 import Json.Decode as Json
-
+import LineChart.Coordinate as Coordinate exposing (..)
+import Svg
+import Svg.Events
 
 
 {-| -}
 type Config data msg
-  = Config (List (Event data msg))
+    = Config (List (Event data msg))
 
 
 {-| -}
 default : Config data msg
 default =
-  custom []
+    custom []
 
 
 {-| -}
 hoverMany : (List data -> msg) -> Config data msg
 hoverMany msg =
-  custom
-    [ onMouseMove msg getNearestX
-    , onMouseLeave (msg [])
-    ]
+    custom
+        [ onMouseMove msg getNearestX
+        , onMouseLeave (msg [])
+        ]
 
 
 {-| -}
 hoverOne : (Maybe data -> msg) -> Config data msg
 hoverOne msg =
-  custom
-    [ onMouseMove msg (getWithin 30)
-    , on "touchstart" msg (getWithin 100)
-    , on "touchmove" msg (getWithin 100)
-    , onMouseLeave (msg Nothing)
-    ]
+    custom
+        [ onMouseMove msg (getWithin 30)
+        , on "touchstart" msg (getWithin 100)
+        , on "touchmove" msg (getWithin 100)
+        , onMouseLeave (msg Nothing)
+        ]
 
 
 {-| -}
 click : (Maybe data -> msg) -> Config data msg
 click msg =
-  custom
-    [ onClick msg (getWithin 30) ]
+    custom
+        [ onClick msg (getWithin 30) ]
 
 
 {-| -}
 custom : List (Event data msg) -> Config data msg
 custom =
-  Config
+    Config
 
 
 
@@ -71,60 +92,67 @@ custom =
 
 {-| -}
 type Event data msg
-  = Event Bool (List (Data.Data data) -> System -> Svg.Attribute msg)
+    = Event Bool (List (Data.Data data) -> System -> Svg.Attribute msg)
 
 
 onClick : (a -> msg) -> Decoder data a -> Event data msg
 onClick =
-  on "click"
+    on "click"
 
 
 {-| -}
 onMouseMove : (a -> msg) -> Decoder data a -> Event data msg
 onMouseMove =
-  on "mousemove"
+    on "mousemove"
 
 
 {-| -}
 onMouseDown : (a -> msg) -> Decoder data a -> Event data msg
 onMouseDown =
-  on "mousedown"
+    on "mousedown"
 
 
 {-| -}
 onMouseUp : (a -> msg) -> Decoder data a -> Event data msg
 onMouseUp =
-  on "mouseup"
+    on "mouseup"
 
 
 {-| -}
 onMouseLeave : msg -> Event data msg
 onMouseLeave msg =
-  Event False <| \_ _ ->
-    Svg.Events.on "mouseleave" (Json.succeed msg)
+    Event False <|
+        \_ _ ->
+            Svg.Events.on "mouseleave" (Json.succeed msg)
 
 
 {-| -}
 on : String -> (a -> msg) -> Decoder data a -> Event data msg
 on event toMsg decoder =
-  Event False <| \data system ->
-    let defaultOptions = Options False False False in
-    Svg.Events.custom event (toJsonDecoder defaultOptions data system (map toMsg decoder))
+    Event False <|
+        \data system ->
+            let
+                defaultOptions =
+                    Options False False False
+            in
+            Svg.Events.custom event (toJsonDecoder defaultOptions data system (map toMsg decoder))
 
 
 {-| -}
 onWithOptions : String -> Options -> (a -> msg) -> Decoder data a -> Event data msg
 onWithOptions event options toMsg decoder =
-  Event options.catchOutsideChart <| \data system ->
-    Html.Events.custom event (toJsonDecoder options data system (map toMsg decoder))
+    Event options.catchOutsideChart <|
+        \data system ->
+            Html.Events.custom event (toJsonDecoder options data system (map toMsg decoder))
 
 
 {-| -}
 type alias Options =
-  { stopPropagation : Bool
-  , preventDefault : Bool
-  , catchOutsideChart : Bool
-  }
+    { stopPropagation : Bool
+    , preventDefault : Bool
+    , catchOutsideChart : Bool
+    }
+
 
 
 -- INTERNAL
@@ -133,21 +161,29 @@ type alias Options =
 {-| -}
 toChartAttributes : List (Data.Data data) -> System -> Config data msg -> List (Svg.Attribute msg)
 toChartAttributes data system (Config events) =
-  let
-    order (Event outside event) =
-      if outside then Nothing else Just (event data system)
-  in
-  List.filterMap order events
+    let
+        order (Event outside event) =
+            if outside then
+                Nothing
+
+            else
+                Just (event data system)
+    in
+    List.filterMap order events
 
 
 {-| -}
 toContainerAttributes : List (Data.Data data) -> System -> Config data msg -> List (Svg.Attribute msg)
 toContainerAttributes data system (Config events) =
-  let
-    order (Event outside event) =
-      if outside then Just (event data system) else Nothing
-  in
-  List.filterMap order events
+    let
+        order (Event outside event) =
+            if outside then
+                Just (event data system)
+
+            else
+                Nothing
+    in
+    List.filterMap order events
 
 
 
@@ -155,79 +191,87 @@ toContainerAttributes data system (Config events) =
 
 
 {-| -}
-type Decoder data msg =
-  Decoder (List (Data.Data data) -> System  -> Point -> msg)
+type Decoder data msg
+    = Decoder (List (Data.Data data) -> System -> Point -> msg)
 
 
 {-| -}
 getSvg : Decoder data Point
 getSvg =
-  Decoder <| \points system searched ->
-    searched
+    Decoder <|
+        \points system searched ->
+            searched
 
 
 {-| -}
 getData : Decoder data Point
 getData =
-  Decoder <| \points system searchedSvg ->
-    Coordinate.toData system searchedSvg
+    Decoder <|
+        \points system searchedSvg ->
+            Coordinate.toData system searchedSvg
 
 
 {-| -}
 getNearest : Decoder data (Maybe data)
 getNearest =
-  Decoder <| \points system searchedSvg ->
-    let
-      searched =
-        Coordinate.toData system searchedSvg
-    in
-    getNearestHelp points system searched
-      |> Maybe.map .user
+    Decoder <|
+        \points system searchedSvg ->
+            let
+                searched =
+                    Coordinate.toData system searchedSvg
+            in
+            getNearestHelp points system searched
+                |> Maybe.map .user
 
 
 {-| -}
 getWithin : Float -> Decoder data (Maybe data)
 getWithin radius =
-  Decoder <| \points system searchedSvg ->
-    let
-      searched =
-        Coordinate.toData system searchedSvg
+    Decoder <|
+        \points system searchedSvg ->
+            let
+                searched =
+                    Coordinate.toData system searchedSvg
 
-      keepIfEligible closest =
-          if withinRadius system radius searched closest.point
-            then Just closest.user
-            else Nothing
-    in
-    getNearestHelp points system searched
-      |> Maybe.andThen keepIfEligible
+                keepIfEligible closest =
+                    if withinRadius system radius searched closest.point then
+                        Just closest.user
+
+                    else
+                        Nothing
+            in
+            getNearestHelp points system searched
+                |> Maybe.andThen keepIfEligible
 
 
 {-| -}
 getNearestX : Decoder data (List data)
 getNearestX =
-  Decoder <| \points system searchedSvg ->
-    let
-      searched =
-        Coordinate.toData system searchedSvg
-    in
-    getNearestXHelp points system searched
-      |> List.map .user
+    Decoder <|
+        \points system searchedSvg ->
+            let
+                searched =
+                    Coordinate.toData system searchedSvg
+            in
+            getNearestXHelp points system searched
+                |> List.map .user
 
 
 {-| -}
 getWithinX : Float -> Decoder data (List data)
 getWithinX radius =
-  Decoder <| \points system searchedSvg ->
-    let
-      searched =
-        Coordinate.toData system searchedSvg
+    Decoder <|
+        \points system searchedSvg ->
+            let
+                searched =
+                    Coordinate.toData system searchedSvg
 
-      keepIfEligible =
-          withinRadiusX system radius searched << .point
-    in
-    getNearestXHelp points system searched
-      |> List.filter keepIfEligible
-      |> List.map .user
+                keepIfEligible =
+                    withinRadiusX system radius searched << .point
+            in
+            getNearestXHelp points system searched
+                |> List.filter keepIfEligible
+                |> List.map .user
 
 
 
@@ -237,19 +281,19 @@ getWithinX radius =
 {-| -}
 map : (a -> msg) -> Decoder data a -> Decoder data msg
 map f (Decoder a) =
-  Decoder <| \ps s p -> f (a ps s p)
+    Decoder <| \ps s p -> f (a ps s p)
 
 
 {-| -}
 map2 : (a -> b -> msg) -> Decoder data a -> Decoder data b -> Decoder data msg
 map2 f (Decoder a) (Decoder b) =
-  Decoder <| \ps s p -> f (a ps s p) (b ps s p)
+    Decoder <| \ps s p -> f (a ps s p) (b ps s p)
 
 
 {-| -}
 map3 : (a -> b -> c -> msg) -> Decoder data a -> Decoder data b -> Decoder data c -> Decoder data msg
 map3 f (Decoder a) (Decoder b) (Decoder c) =
-  Decoder <| \ps s p -> f (a ps s p) (b ps s p) (c ps s p)
+    Decoder <| \ps s p -> f (a ps s p) (b ps s p) (c ps s p)
 
 
 
@@ -258,35 +302,42 @@ map3 f (Decoder a) (Decoder b) (Decoder c) =
 
 getNearestHelp : List (Data.Data data) -> System -> Point -> Maybe (Data.Data data)
 getNearestHelp points system searched =
-  let
-      distance_ =
-          distance system searched
+    let
+        distance_ =
+            distance system searched
 
-      getClosest point closest =
-          if distance_ closest.point < distance_ point.point
-            then closest
-            else point
-  in
-  withFirst (List.filter .isReal points) (List.foldl getClosest)
+        getClosest point closest =
+            if distance_ closest.point < distance_ point.point then
+                closest
+
+            else
+                point
+    in
+    withFirst (List.filter .isReal points) (List.foldl getClosest)
 
 
 getNearestXHelp : List (Data.Data data) -> System -> Point -> List (Data.Data data)
 getNearestXHelp points system searched =
-  let
-      distanceX_ =
-          distanceX system searched
+    let
+        distanceX_ =
+            distanceX system searched
 
-      getClosest point allClosest =
-        case List.head allClosest of
-          Just closest ->
-              if closest.point.x == point.point.x then point :: allClosest
-              else if distanceX_ closest.point > distanceX_ point.point then [ point ]
-              else allClosest
+        getClosest point allClosest =
+            case List.head allClosest of
+                Just closest ->
+                    if closest.point.x == point.point.x then
+                        point :: allClosest
 
-          Nothing ->
-            [ point ]
-  in
-  List.foldl getClosest [] points
+                    else if distanceX_ closest.point > distanceX_ point.point then
+                        [ point ]
+
+                    else
+                        allClosest
+
+                Nothing ->
+                    [ point ]
+    in
+    List.foldl getClosest [] points
 
 
 
@@ -323,50 +374,57 @@ withinRadiusX system radius searched dot =
 
 
 {-| -}
-toJsonDecoder : Options -> List (Data.Data data) -> System -> Decoder data msg -> Json.Decoder { message : msg, stopPropagation : Bool, preventDefault : Bool}
+toJsonDecoder : Options -> List (Data.Data data) -> System -> Decoder data msg -> Json.Decoder { message : msg, stopPropagation : Bool, preventDefault : Bool }
 toJsonDecoder options data system (Decoder decoder) =
-  let
-    handle mouseX mouseY { left, top, height, width } =
-      let
-        widthPercent = width / system.frame.size.width
-        heightPercent = height / system.frame.size.height
+    let
+        handle mouseX mouseY { left, top, height, width } =
+            let
+                widthPercent =
+                    width / system.frame.size.width
 
-        newSize =
-          { width = width
-          , height = height
-          }
+                heightPercent =
+                    height / system.frame.size.height
 
-        newMargin =
-          { top = system.frame.margin.top * heightPercent
-          , right = system.frame.margin.right * widthPercent
-          , bottom = system.frame.margin.bottom * heightPercent
-          , left = system.frame.margin.left * widthPercent
-          }
+                newSize =
+                    { width = width
+                    , height = height
+                    }
 
-        newSystem =
-          { system | frame = { size = newSize, margin = newMargin } }
+                newMargin =
+                    { top = system.frame.margin.top * heightPercent
+                    , right = system.frame.margin.right * widthPercent
+                    , bottom = system.frame.margin.bottom * heightPercent
+                    , left = system.frame.margin.left * widthPercent
+                    }
 
-        x = (mouseX - left)
-        y = (mouseY - top)
-      in
-      decoder data newSystem (Point x y)
+                newSystem =
+                    { system | frame = { size = newSize, margin = newMargin } }
 
-    withOptions msg =
-      { message = msg
-      , stopPropagation = options.stopPropagation
-      , preventDefault = options.preventDefault
-      }
-  in
-  Json.map3 handle
-    (Json.field "pageX" Json.float) -- TODO
-    (Json.field "pageY" Json.float)
-    (DOM.target position)
-    |> Json.map withOptions
+                x =
+                    mouseX - left
+
+                y =
+                    mouseY - top
+            in
+            decoder data newSystem (Point x y)
+
+        withOptions msg =
+            { message = msg
+            , stopPropagation = options.stopPropagation
+            , preventDefault = options.preventDefault
+            }
+    in
+    Json.map3 handle
+        (Json.field "pageX" Json.float)
+        -- TODO
+        (Json.field "pageY" Json.float)
+        (DOM.target position)
+        |> Json.map withOptions
 
 
 position : Json.Decoder DOM.Rectangle
 position =
-  Json.oneOf
-    [ DOM.boundingClientRect
-    , Json.lazy (\_ -> DOM.parentElement position)
-    ]
+    Json.oneOf
+        [ DOM.boundingClientRect
+        , Json.lazy (\_ -> DOM.parentElement position)
+        ]

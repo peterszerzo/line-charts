@@ -1,25 +1,28 @@
 module LineChart.Container exposing
-  ( Config, Properties, Size, Margin
-  , default, spaced, styled, responsive, custom
-  , relative, static
-  )
+    ( Config, default, spaced, styled, responsive
+    , custom, Properties, Margin
+    , Size, relative, static
+    )
 
 {-|
 
 @docs Config, default, spaced, styled, responsive
 
+
 # Customization
+
 @docs custom, Properties, Margin
 
+
 ## Sizing
+
 @docs Size, relative, static
 
 -}
 
 import Html
-import Svg
 import Internal.Container as Container
-
+import Svg
 
 
 {-| Use in the `LineChart.Config` passed to `LineChart.viewCustom`.
@@ -33,7 +36,7 @@ import Internal.Container as Container
 
 -}
 type alias Config msg =
-  Container.Config msg
+    Container.Config msg
 
 
 {-| The default container configuration.
@@ -45,7 +48,7 @@ _See the full example [here](https://github.com/terezka/line-charts/blob/master/
 -}
 default : String -> Config msg
 default =
-  Container.default
+    Container.default
 
 
 {-| The default container configuration, but you decide the margins.
@@ -54,15 +57,14 @@ Pass the id and the top, right, bottom, and left margin respectivily.
 
     customContainer : Container.Config msg
     customContainer =
-      Container.spaced "line-chart-1" 60 100 60 70
-
+        Container.spaced "line-chart-1" 60 100 60 70
 
 _See the full example [here](https://github.com/terezka/line-charts/blob/master/examples/Docs/Container/Example4.elm)._
 
 -}
 spaced : String -> Float -> Float -> Float -> Float -> Config msg
 spaced =
-  Container.spaced
+    Container.spaced
 
 
 {-| The default container configuration, but you can add some extra styles.
@@ -71,7 +73,7 @@ Pass the id and styles in form of tupels of strings.
 
     customContainer : Container.Config msg
     customContainer =
-      Container.styled "line-chart-1" [ ( "font-family", "monospace" ) ]
+        Container.styled "line-chart-1" [ ( "font-family", "monospace" ) ]
 
 Ok, so we have `spaced` if we want to set the margins and `styled` if
 we want to set the styles; but what if I want to set the margins AND the
@@ -80,7 +82,7 @@ styles? If so, use `custom`!
 -}
 styled : String -> List ( String, String ) -> Config msg
 styled =
-  Container.styled
+    Container.styled
 
 
 {-| Makes the chart take the size of your container.
@@ -92,26 +94,26 @@ _See the full example [here](https://github.com/terezka/line-charts/blob/master/
 -}
 responsive : String -> Config msg
 responsive =
-  Container.responsive
+    Container.responsive
 
 
 {-| -}
 type alias Properties msg =
-  { attributesHtml : List (Html.Attribute msg)
-  , attributesSvg : List (Svg.Attribute msg)
-  , size : Container.Size
-  , margin : Margin
-  , id : String
-  }
+    { attributesHtml : List (Html.Attribute msg)
+    , attributesSvg : List (Svg.Attribute msg)
+    , size : Container.Size
+    , margin : Margin
+    , id : String
+    }
 
 
 {-| -}
 type alias Margin =
-  { top : Float
-  , right : Float
-  , bottom : Float
-  , left : Float
-  }
+    { top : Float
+    , right : Float
+    , bottom : Float
+    , left : Float
+    }
 
 
 {-| Properties:
@@ -123,24 +125,24 @@ type alias Margin =
   - **id** sets the id. It's important for this to be unique for every chart
     on your page.
 
-
-    containerConfig : Container.Config msg
-    containerConfig =
-      Container.custom
+```
+containerConfig : Container.Config msg
+containerConfig =
+    Container.custom
         { attributesHtml = [ Html.Attributes.style [ ( "font-family", "monospace" ) ] ]
         , attributesSvg = []
         , size = Container.static
         , margin = Container.Margin 30 100 60 80
         , id = "chart-id"
         }
-
+```
 
 _See the full example [here](https://github.com/terezka/line-charts/blob/master/examples/Docs/Container/Example3.elm)._
 
 -}
 custom : Properties msg -> Config msg
 custom =
-  Container.custom
+    Container.custom
 
 
 
@@ -149,19 +151,19 @@ custom =
 
 {-| -}
 type alias Size =
-  Container.Size
+    Container.Size
 
 
 {-| Makes the chart size relative to it's container
 -}
 relative : Size
 relative =
-  Container.relative
+    Container.relative
 
 
 {-| Makes the chart the exact number of pixels defined in your x and y axis
- configuration.
+configuration.
 -}
 static : Size
 static =
-  Container.static
+    Container.static

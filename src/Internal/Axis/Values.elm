@@ -1,31 +1,29 @@
-module Internal.Axis.Values exposing (Amount, around, exactly, int, time, float, custom)
+module Internal.Axis.Values exposing (Amount, around, custom, exactly, float, int, time)
 
-
-import Round
-import LineChart.Axis.Tick exposing (Time, Unit(..), Interval)
 import Internal.Axis.Values.Time as Time
-import Internal.Utils as Utils
 import Internal.Coordinate as Coordinate
+import Internal.Utils as Utils
+import LineChart.Axis.Tick exposing (Interval, Time, Unit(..))
+import Round
 import Time
 
 
 {-| -}
 type Amount
-  = Exactly Int
-  | Around Int
-
+    = Exactly Int
+    | Around Int
 
 
 {-| -}
 around : Int -> Amount
 around =
-  Around
+    Around
 
 
 {-| -}
 exactly : Int -> Amount
 exactly =
-  Exactly
+    Exactly
 
 
 
@@ -35,17 +33,23 @@ exactly =
 {-| -}
 int : Amount -> Coordinate.Range -> List Int
 int amount =
-  case amount of
-    Exactly amount_ -> List.map round << values False True amount_
-    Around amount_  -> List.map round << values False False amount_
+    case amount of
+        Exactly amount_ ->
+            List.map round << values False True amount_
+
+        Around amount_ ->
+            List.map round << values False False amount_
 
 
 {-| -}
 float : Amount -> Coordinate.Range -> List Float
 float amount =
-  case amount of
-    Exactly amount_ -> values True True amount_
-    Around amount_  -> values True False amount_
+    case amount of
+        Exactly amount_ ->
+            values True True amount_
+
+        Around amount_ ->
+            values True False amount_
 
 
 {-| -}
@@ -53,10 +57,10 @@ custom : Float -> Float -> Coordinate.Range -> List Float
 custom intersection interval range =
     let
         offset value =
-          interval * toFloat (floor (value / interval))
+            interval * toFloat (floor (value / interval))
 
         beginning =
-          intersection - offset (intersection - range.min)
+            intersection - offset (intersection - range.min)
     in
     positions range beginning interval 0 []
 
@@ -64,7 +68,7 @@ custom intersection interval range =
 {-| -}
 time : Time.Zone -> Int -> Coordinate.Range -> List Time
 time =
-  Time.values
+    Time.values
 
 
 
@@ -74,129 +78,161 @@ time =
 values : Bool -> Bool -> Int -> Coordinate.Range -> List Float
 values allowDecimals exact amountRough range =
     let
-      amountRoughSafe =
-        if amountRough == 0 then 1 else amountRough
+        amountRoughSafe =
+            if amountRough == 0 then
+                1
 
-      intervalRough =
-        (range.max - range.min) / toFloat amountRough
+            else
+                amountRough
 
-      interval =
-        getInterval intervalRough allowDecimals exact
+        intervalRough =
+            (range.max - range.min) / toFloat amountRough
 
-      intervalSafe =
-        if interval == 0 then 1 else interval
+        interval =
+            getInterval intervalRough allowDecimals exact
 
-      beginning =
-        getBeginning range.min intervalSafe
+        intervalSafe =
+            if interval == 0 then
+                1
+
+            else
+                interval
+
+        beginning =
+            getBeginning range.min intervalSafe
     in
     positions range beginning intervalSafe 0 []
 
 
 getBeginning : Float -> Float -> Float
 getBeginning min interval =
-  let
-    multiple =
-      min / interval -- TODO figure out precision
-  in
-    if multiple == toFloat (round multiple)
-      then min
-      else ceilingTo interval min
+    let
+        multiple =
+            min / interval
+
+        -- TODO figure out precision
+    in
+    if multiple == toFloat (round multiple) then
+        min
+
+    else
+        ceilingTo interval min
 
 
 positions : Coordinate.Range -> Float -> Float -> Float -> List Float -> List Float
 positions range beginning interval m acc =
-  let next = correctFloat (getPrecision interval) (beginning + (m * interval)) in
-  if next > range.max then acc else positions range beginning interval (m + 1) (acc ++ [ next ])
+    let
+        next =
+            correctFloat (getPrecision interval) (beginning + (m * interval))
+    in
+    if next > range.max then
+        acc
+
+    else
+        positions range beginning interval (m + 1) (acc ++ [ next ])
 
 
 getInterval : Float -> Bool -> Bool -> Float
 getInterval intervalRaw allowDecimals hasTickAmount =
-  let
-    magnitude =
-      Utils.magnitude intervalRaw
+    let
+        magnitude =
+            Utils.magnitude intervalRaw
 
-    normalized =
-      intervalRaw / magnitude
+        normalized =
+            intervalRaw / magnitude
 
-    multiples =
-      getMultiples magnitude allowDecimals hasTickAmount
+        multiples =
+            getMultiples magnitude allowDecimals hasTickAmount
 
-    findMultiple multiples_ =
-      case multiples_ of
-        m1 :: m2 :: rest ->
-          if normalized <= (m1 + m2) / 2
-            then m1 else findMultiple (m2 :: rest)
+        findMultiple multiples_ =
+            case multiples_ of
+                m1 :: m2 :: rest ->
+                    if normalized <= (m1 + m2) / 2 then
+                        m1
 
-        m1 :: rest ->
-          if normalized <= m1
-            then m1 else findMultiple rest
+                    else
+                        findMultiple (m2 :: rest)
 
-        [] ->
-          1
+                m1 :: rest ->
+                    if normalized <= m1 then
+                        m1
 
-    findMultipleExact multiples_ =
-      case multiples_ of
-        m1 :: rest ->
-          if m1 * magnitude >= intervalRaw
-            then m1 else findMultipleExact rest
+                    else
+                        findMultiple rest
 
-        [] ->
-          1
+                [] ->
+                    1
 
-    multiple =
-      if hasTickAmount then
-        findMultipleExact multiples
-      else
-        findMultiple multiples
+        findMultipleExact multiples_ =
+            case multiples_ of
+                m1 :: rest ->
+                    if m1 * magnitude >= intervalRaw then
+                        m1
 
-    precision =
-      getPrecision magnitude + getPrecision multiple
-  in
-  correctFloat precision (multiple * magnitude)
+                    else
+                        findMultipleExact rest
+
+                [] ->
+                    1
+
+        multiple =
+            if hasTickAmount then
+                findMultipleExact multiples
+
+            else
+                findMultiple multiples
+
+        precision =
+            getPrecision magnitude + getPrecision multiple
+    in
+    correctFloat precision (multiple * magnitude)
 
 
 getMultiples : Float -> Bool -> Bool -> List Float
 getMultiples magnitude allowDecimals hasTickAmount =
-  let
-    defaults =
-      if hasTickAmount then
-        [ 1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10 ]
-      else
-        [ 1, 2, 2.5, 5, 10 ]
-  in
+    let
+        defaults =
+            if hasTickAmount then
+                [ 1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10 ]
+
+            else
+                [ 1, 2, 2.5, 5, 10 ]
+    in
     if allowDecimals then
-      defaults
-    else
-      if magnitude == 1 then
+        defaults
+
+    else if magnitude == 1 then
         List.filter (\n -> toFloat (round n) == n) defaults
-      else if magnitude <= 0.1 then
+
+    else if magnitude <= 0.1 then
         [ 1 / magnitude ]
-      else
+
+    else
         defaults
 
 
 {-| -}
 correctFloat : Int -> Float -> Float
 correctFloat prec =
-  Round.round prec >> String.toFloat >> Maybe.withDefault 0
+    Round.round prec >> String.toFloat >> Maybe.withDefault 0
 
 
 {-| -}
 getPrecision : Float -> Int
 getPrecision number =
-  case String.split "e" (String.fromFloat number) of
-    [ before, after ] ->
-      String.toInt after |> Maybe.withDefault 0 |> abs
-
-    _ ->
-      case String.split "." (String.fromFloat number) of
+    case String.split "e" (String.fromFloat number) of
         [ before, after ] ->
-            String.length after
+            String.toInt after |> Maybe.withDefault 0 |> abs
 
         _ ->
-           0
+            case String.split "." (String.fromFloat number) of
+                [ before, after ] ->
+                    String.length after
+
+                _ ->
+                    0
 
 
 ceilingTo : Float -> Float -> Float
 ceilingTo prec number =
-  prec * toFloat (ceiling (number / prec))
+    prec * toFloat (ceiling (number / prec))

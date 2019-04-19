@@ -1,8 +1,6 @@
 module LineChart.Interpolation exposing (Config, default, linear, monotone, stepped)
 
-{-|
-
-Interpolation is the the kind of line which is drawn between your data points.
+{-| Interpolation is the the kind of line which is drawn between your data points.
 It's meant to be a guide to where your data point would actually be if you had
 more data. It's not just for looks!
 
@@ -24,14 +22,14 @@ import Internal.Interpolation as Interpolation
 
 -}
 type alias Config =
-  Interpolation.Config
+    Interpolation.Config
 
 
 {-| The vanilla of interpolations: linear.
 -}
 default : Config
 default =
-  linear
+    linear
 
 
 {-| A linear interpolation.
@@ -41,7 +39,7 @@ default =
 -}
 linear : Config
 linear =
-  Interpolation.Linear
+    Interpolation.Linear
 
 
 {-| A monotone-x interpolation.
@@ -51,7 +49,7 @@ linear =
 -}
 monotone : Config
 monotone =
-  Interpolation.Monotone
+    Interpolation.Monotone
 
 
 {-| A stepped interpolation where the step comes after the dot.
@@ -61,4 +59,4 @@ monotone =
 -}
 stepped : Config
 stepped =
-  Interpolation.Stepped
+    Interpolation.Stepped

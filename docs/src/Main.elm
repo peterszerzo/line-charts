@@ -1,15 +1,15 @@
-port module Main exposing (..)
+port module Main exposing (Id, Model, Msg(..), highlight, init, main, setBodyScroll, update, view, viewExample, viewSource, viewTitle)
 
+import Area
+import Dict
 import Html
 import Html.Attributes
 import Html.Events
 import Html.Lazy
-import Dict
-import Area
+import Lines
 import Selection
 import Stepped
 import Ticks
-import Lines
 
 
 
@@ -17,18 +17,18 @@ import Lines
 
 
 type alias Model =
-  { focused : Id
-  , isSourceOpen : Bool
-  , selection : Selection.Model
-  , area : Area.Model
-  , stepped : Stepped.Model
-  , ticks : Ticks.Model
-  , lines : Lines.Model
-  }
+    { focused : Id
+    , isSourceOpen : Bool
+    , selection : Selection.Model
+    , area : Area.Model
+    , stepped : Stepped.Model
+    , ticks : Ticks.Model
+    , lines : Lines.Model
+    }
 
 
 type alias Id =
-  Int
+    Int
 
 
 
@@ -37,22 +37,22 @@ type alias Id =
 
 init : ( Model, Cmd Msg )
 init =
-  let
-    ( selection, cmdSelection ) =
-      Selection.init
+    let
+        ( selection, cmdSelection ) =
+            Selection.init
 
-    ( area, cmdArea ) =
-      Area.init
+        ( area, cmdArea ) =
+            Area.init
 
-    ( stepped, cmdStepped ) =
-      Stepped.init
+        ( stepped, cmdStepped ) =
+            Stepped.init
 
-    ( ticks, cmdTicks ) =
-      Ticks.init
+        ( ticks, cmdTicks ) =
+            Ticks.init
 
-    ( lines, cmdLines ) =
-      Lines.init
-  in
+        ( lines, cmdLines ) =
+            Lines.init
+    in
     ( { focused = 0
       , isSourceOpen = False
       , selection = selection
@@ -72,87 +72,91 @@ init =
     )
 
 
+
 -- UPDATE
 
 
 type Msg
-  = Focus Id
-  | CloseSource
-  | SelectionMsg Selection.Msg
-  | AreaMsg Area.Msg
-  | SteppedMsg Stepped.Msg
-  | TicksMsg Ticks.Msg
-  | LinesMsg Lines.Msg
+    = Focus Id
+    | CloseSource
+    | SelectionMsg Selection.Msg
+    | AreaMsg Area.Msg
+    | SteppedMsg Stepped.Msg
+    | TicksMsg Ticks.Msg
+    | LinesMsg Lines.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-  case msg of
-    Focus id ->
-      let
-        isSourceOpen =
-          if model.isSourceOpen && model.focused == id then
-            False
-          else if model.focused /= id then
-            True
-          else
-            not model.isSourceOpen
-      in
-      ( { model | isSourceOpen = isSourceOpen
-        , focused = id
-        }
-      , setBodyScroll isSourceOpen
-      )
+    case msg of
+        Focus id ->
+            let
+                isSourceOpen =
+                    if model.isSourceOpen && model.focused == id then
+                        False
 
-    CloseSource ->
-      ( { model | isSourceOpen = False }
-      , setBodyScroll False
-      )
+                    else if model.focused /= id then
+                        True
 
-    SelectionMsg msg ->
-      let
-        ( selection, cmd ) =
-          Selection.update msg model.selection
-      in
-        ( { model | selection = selection }
-        , Cmd.map SelectionMsg cmd
-        )
+                    else
+                        not model.isSourceOpen
+            in
+            ( { model
+                | isSourceOpen = isSourceOpen
+                , focused = id
+              }
+            , setBodyScroll isSourceOpen
+            )
 
-    AreaMsg msg ->
-      let
-        ( area, cmd ) =
-          Area.update msg model.area
-      in
-        ( { model | area = area }
-        , Cmd.map AreaMsg cmd
-        )
+        CloseSource ->
+            ( { model | isSourceOpen = False }
+            , setBodyScroll False
+            )
 
-    SteppedMsg msg ->
-      let
-        ( stepped, cmd ) =
-          Stepped.update msg model.stepped
-      in
-        ( { model | stepped = stepped }
-        , Cmd.map SteppedMsg cmd
-        )
+        SelectionMsg msg ->
+            let
+                ( selection, cmd ) =
+                    Selection.update msg model.selection
+            in
+            ( { model | selection = selection }
+            , Cmd.map SelectionMsg cmd
+            )
 
-    TicksMsg msg ->
-      let
-        ( ticks, cmd ) =
-          Ticks.update msg model.ticks
-      in
-        ( { model | ticks = ticks }
-        , Cmd.map TicksMsg cmd
-        )
+        AreaMsg msg ->
+            let
+                ( area, cmd ) =
+                    Area.update msg model.area
+            in
+            ( { model | area = area }
+            , Cmd.map AreaMsg cmd
+            )
 
-    LinesMsg msg ->
-      let
-        ( lines, cmd ) =
-          Lines.update msg model.lines
-      in
-        ( { model | lines = lines }
-        , Cmd.map LinesMsg cmd
-        )
+        SteppedMsg msg ->
+            let
+                ( stepped, cmd ) =
+                    Stepped.update msg model.stepped
+            in
+            ( { model | stepped = stepped }
+            , Cmd.map SteppedMsg cmd
+            )
+
+        TicksMsg msg ->
+            let
+                ( ticks, cmd ) =
+                    Ticks.update msg model.ticks
+            in
+            ( { model | ticks = ticks }
+            , Cmd.map TicksMsg cmd
+            )
+
+        LinesMsg msg ->
+            let
+                ( lines, cmd ) =
+                    Lines.update msg model.lines
+            in
+            ( { model | lines = lines }
+            , Cmd.map LinesMsg cmd
+            )
 
 
 
@@ -161,19 +165,20 @@ update msg model =
 
 view : Model -> Html.Html Msg
 view model =
-  Html.div
-    [ Html.Attributes.class "view" ]
-    [ viewTitle
-    , Html.div
-        [ Html.Attributes.class "view__body" ]
-        [ viewExample 0 "full" AreaMsg Area.view model.area
-        , viewExample 1 "full" SelectionMsg Selection.view model.selection
-        , viewExample 2 "full" LinesMsg Lines.view model.lines
-        , viewExample 3 "full" SteppedMsg Stepped.view model.stepped
-        -- , viewExample 4 "half" TicksMsg Ticks.view model.ticks
+    Html.div
+        [ Html.Attributes.class "view" ]
+        [ viewTitle
+        , Html.div
+            [ Html.Attributes.class "view__body" ]
+            [ viewExample 0 "full" AreaMsg Area.view model.area
+            , viewExample 1 "full" SelectionMsg Selection.view model.selection
+            , viewExample 2 "full" LinesMsg Lines.view model.lines
+            , viewExample 3 "full" SteppedMsg Stepped.view model.stepped
+
+            -- , viewExample 4 "half" TicksMsg Ticks.view model.ticks
+            ]
+        , viewSource model.focused model.isSourceOpen
         ]
-    , viewSource model.focused model.isSourceOpen
-    ]
 
 
 viewTitle : Html.Html msg
@@ -207,57 +212,59 @@ viewTitle =
 
 viewExample : Id -> String -> (msg -> Msg) -> (a -> Html.Html msg) -> a -> Html.Html Msg
 viewExample id modifier toMsg view model =
-  let
-    class =
-      "view__example__container view__example__container--" ++ modifier
-  in
-  Html.div
-    [ Html.Attributes.class class ]
-    [ Html.map toMsg (Html.Lazy.lazy view model)
-    , Html.button
-        [ Html.Attributes.class "view__example__toggle-source"
-        , Html.Events.onClick (Focus id)
+    let
+        class =
+            "view__example__container view__example__container--" ++ modifier
+    in
+    Html.div
+        [ Html.Attributes.class class ]
+        [ Html.map toMsg (Html.Lazy.lazy view model)
+        , Html.button
+            [ Html.Attributes.class "view__example__toggle-source"
+            , Html.Events.onClick (Focus id)
+            ]
+            [ Html.text "see source" ]
         ]
-        [ Html.text "see source" ]
-    ]
 
 
 viewSource : Id -> Bool -> Html.Html Msg
 viewSource id isSourceOpen =
-  let
-    classes =
-      if isSourceOpen then
-        "view__source__container view__source__container--open"
-      else
-        "view__source__container view__source__container--closed"
+    let
+        classes =
+            if isSourceOpen then
+                "view__source__container view__source__container--open"
 
-    viewInnerSource i s =
-      if i ==  id then
-        Html.pre
-          [ Html.Attributes.class "shown" ]
-          [ Html.text s ]
-      else
-        Html.pre
-          [ Html.Attributes.class "hidden" ]
-          [ Html.text s ]
+            else
+                "view__source__container view__source__container--closed"
 
-    viewSources =
-      List.indexedMap viewInnerSource
-        [ Area.source
-        , Selection.source
-        , Lines.source
-        , Stepped.source
+        viewInnerSource i s =
+            if i == id then
+                Html.pre
+                    [ Html.Attributes.class "shown" ]
+                    [ Html.text s ]
+
+            else
+                Html.pre
+                    [ Html.Attributes.class "hidden" ]
+                    [ Html.text s ]
+
+        viewSources =
+            List.indexedMap viewInnerSource
+                [ Area.source
+                , Selection.source
+                , Lines.source
+                , Stepped.source
+                ]
+    in
+    Html.div
+        [ Html.Attributes.class classes ]
+        [ Html.button
+            [ Html.Events.onClick CloseSource ]
+            [ Html.text "[x] close" ]
+        , Html.div
+            [ Html.Attributes.class "view__source__inner elm" ]
+            viewSources
         ]
-  in
-  Html.div
-    [ Html.Attributes.class classes ]
-    [ Html.button
-        [ Html.Events.onClick CloseSource ]
-        [ Html.text "[x] close" ]
-    , Html.div
-        [ Html.Attributes.class "view__source__inner elm" ]
-        viewSources
-    ]
 
 
 
@@ -265,6 +272,8 @@ viewSource id isSourceOpen =
 
 
 port highlight : () -> Cmd msg
+
+
 port setBodyScroll : Bool -> Cmd msg
 
 
@@ -277,6 +286,6 @@ main =
     Html.program
         { init = init
         , update = update
-        , subscriptions = (always Sub.none)
+        , subscriptions = always Sub.none
         , view = view
         }

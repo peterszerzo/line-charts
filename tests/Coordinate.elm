@@ -1,10 +1,11 @@
-module Coordinate exposing (..)
+module Coordinate exposing (coordinates, frame, horizontal, system, updateFrame, vertical)
 
 import Expect exposing (Expectation)
-import Fuzz exposing (Fuzzer, list, int, float, string)
-import Test exposing (..)
+import Fuzz exposing (Fuzzer, float, int, list, string)
 import Internal.Coordinate exposing (Margin)
 import LineChart.Coordinate exposing (..)
+import Test exposing (..)
+
 
 
 -- MATERIAL
@@ -12,9 +13,9 @@ import LineChart.Coordinate exposing (..)
 
 frame : Frame
 frame =
-  { margin = Margin 0 0 0 0
-  , size = Size 100 100
-  }
+    { margin = Margin 0 0 0 0
+    , size = Size 100 100
+    }
 
 
 system : System
@@ -101,4 +102,4 @@ vertical =
 
 updateFrame : System -> Frame -> System
 updateFrame system frame =
-  { system | frame = frame }
+    { system | frame = frame }

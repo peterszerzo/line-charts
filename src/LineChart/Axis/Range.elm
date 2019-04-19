@@ -1,21 +1,22 @@
-module LineChart.Axis.Range exposing (Config, default, padded, window, custom)
+module LineChart.Axis.Range exposing (Config, default, window, padded, custom)
 
 {-|
+
 
 ## Axis ranges and data ranges
 
 Considering the following data:
 
     data =
-      [ { x = -1, y = -2 }
-      , { x = 5, y = 6 }
-      ]
+        [ { x = -1, y = -2 }
+        , { x = 5, y = 6 }
+        ]
 
 From this we can see that the smallest x is -1 and the largest x is 5. We
 call this the x-data range. By default, the axis range is the same as your
 data range, but we can make it far more complicated than that.
 
-Opposite your data range which is only calculated from  from your data,
+Opposite your data range which is only calculated from from your data,
 **your axis range can be edited** with this module. For example, you can make
 it larger than your data range, as illustrated below.
 
@@ -37,7 +38,6 @@ import Internal.Axis.Range as Range
 import LineChart.Coordinate as Coordinate
 
 
-
 {-| First of all, this configuration is part of the
 configuration in `Axis.custom`.
 
@@ -51,15 +51,14 @@ configuration in `Axis.custom`.
 
 -}
 type alias Config =
-  Range.Config
+    Range.Config
 
 
 {-| Set the axis range to the full length of your data range.
 
     rangeConfig : Range.Config
     rangeConfig =
-      Range.default
-
+        Range.default
 
 _See the full example [here](https://github.com/terezka/line-charts/blob/master/examples/Docs/Range/Example1.elm)._
 
@@ -68,7 +67,7 @@ _See the full example [here](https://github.com/terezka/line-charts/blob/master/
 -}
 default : Config
 default =
-  Range.default
+    Range.default
 
 
 {-| Add a given amount of pixels to the minimum and maximum of your axis range,
@@ -76,8 +75,7 @@ respectivily.
 
     rangeConfig : Range.Config
     rangeConfig =
-      Range.padded 40 40
-
+        Range.padded 40 40
 
 _See the full example [here](https://github.com/terezka/line-charts/blob/master/examples/Docs/Range/Example1.elm)._
 
@@ -86,17 +84,15 @@ _See the full example [here](https://github.com/terezka/line-charts/blob/master/
 -}
 padded : Float -> Float -> Config
 padded =
-  Range.padded
+    Range.padded
 
 
 {-| Straight up set your axis range by specifying the minimum and maximum,
 respectivily.
 
-
     rangeConfig : Range.Config
     rangeConfig =
-      Range.window -0.5 4.5
-
+        Range.window -0.5 4.5
 
 _See the full example [here](https://github.com/terezka/line-charts/blob/master/examples/Docs/Range/Example1.elm)._
 
@@ -105,19 +101,18 @@ _See the full example [here](https://github.com/terezka/line-charts/blob/master/
 -}
 window : Float -> Float -> Config
 window =
-  Range.window
+    Range.window
 
 
 {-| Given your data range, produce your desired axis range.
 
     rangeConfig : Range.Config
     rangeConfig =
-      Range.custom specialRange
+        Range.custom specialRange
 
     specialRange : Coordinate.Range -> Coordinate.Range
     specialRange { min, max } =
-      { min = min - 1, max = max + 2 }
-
+        { min = min - 1, max = max + 2 }
 
 _See the full example [here](https://github.com/terezka/line-charts/blob/master/examples/Docs/Range/Example1.elm)._
 
@@ -126,4 +121,4 @@ _See the full example [here](https://github.com/terezka/line-charts/blob/master/
 -}
 custom : (Coordinate.Range -> Coordinate.Range) -> Config
 custom =
-  Range.custom
+    Range.custom

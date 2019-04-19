@@ -4,9 +4,9 @@ module Internal.Axis.Values.Time exposing (values)
 
 import Internal.Coordinate as Coordinate
 import Internal.Utils as Utils
-import Time
+import LineChart.Axis.Tick exposing (Interval, Time, Unit(..))
+import Time exposing (Month(..))
 import Time.Extra
-import LineChart.Axis.Tick exposing (Time, Unit(..), Interval)
 
 
 
@@ -16,52 +16,63 @@ import LineChart.Axis.Tick exposing (Time, Unit(..), Interval)
 {-| -}
 values : Time.Zone -> Int -> Coordinate.Range -> List Time
 values zone amountRough range =
-  let
-    intervalRough =
-      (range.max - range.min) / toFloat amountRough
+    let
+        intervalRough =
+            (range.max - range.min) / toFloat amountRough
 
-    unit =
-      findBestUnit intervalRough all
+        unit =
+            findBestUnit intervalRough all
 
-    multiple =
-      findBestMultiple intervalRough unit
+        multiple =
+            findBestMultiple intervalRough unit
 
-    interval =
-      toMs unit * toFloat multiple
+        interval =
+            toMs unit * toFloat multiple
 
-    beginning =
-      beginAt zone (floatToPosix range.min) unit multiple
+        beginning =
+            beginAt zone (floatToPosix range.min) unit multiple
 
-    toPositions acc i =
-      let next_ = next zone beginning unit (i * multiple) in
-      if posixsToFloat next_ > range.max then acc else toPositions (acc ++ [ next_ ]) (i + 1)
+        toPositions acc i =
+            let
+                next_ =
+                    next zone beginning unit (i * multiple)
+            in
+            if posixsToFloat next_ > range.max then
+                acc
 
-    toTimes values_ unitChange acc =
-      case values_ of
-        value :: next_ :: rest ->
-          let
-            isFirst = List.isEmpty acc
-            newAcc = toTime unitChange value isFirst :: acc
-            newUnitChange = getUnitChange unit zone value next_
-          in
-          toTimes (next_ :: rest) newUnitChange newAcc
+            else
+                toPositions (acc ++ [ next_ ]) (i + 1)
 
-        [ value ] ->
-           toTime unitChange value (List.isEmpty acc) :: acc
+        toTimes values_ unitChange acc =
+            case values_ of
+                value :: next_ :: rest ->
+                    let
+                        isFirst =
+                            List.isEmpty acc
 
-        [] ->
-          acc
+                        newAcc =
+                            toTime unitChange value isFirst :: acc
 
-    toTime unitChange value isFirst =
-      { change = unitChange
-      , interval = Interval unit multiple
-      , timestamp = value
-      , isFirst = isFirst
-      , zone = zone
-      }
+                        newUnitChange =
+                            getUnitChange unit zone value next_
+                    in
+                    toTimes (next_ :: rest) newUnitChange newAcc
 
-  in
-  toTimes (toPositions [] 0) Nothing []
+                [ value ] ->
+                    toTime unitChange value (List.isEmpty acc) :: acc
+
+                [] ->
+                    acc
+
+        toTime unitChange value isFirst =
+            { change = unitChange
+            , interval = Interval unit multiple
+            , timestamp = value
+            , isFirst = isFirst
+            , zone = zone
+            }
+    in
+    toTimes (toPositions [] 0) Nothing []
 
 
 
@@ -72,77 +83,119 @@ values zone amountRough range =
 -}
 findBestUnit : Float -> List Unit -> Unit
 findBestUnit interval units_ =
-  let
-    findBest_ units__ u0 =
-      case units__ of
-        u1 :: u2 :: rest ->
-          if interval <= middleOfNext u1 u2
-            then u1
-            else findBest_ (u2 :: rest) u1
+    let
+        findBest_ units__ u0 =
+            case units__ of
+                u1 :: u2 :: rest ->
+                    if interval <= middleOfNext u1 u2 then
+                        u1
 
-        u :: _ -> u
-        []     -> Year
+                    else
+                        findBest_ (u2 :: rest) u1
 
-    middleOfNext u1 u2 =
-      (toMs u1 * highestMultiple (multiples u1) + toMs u2) / 2
-  in
-  findBest_ units_ Year
+                u :: _ ->
+                    u
+
+                [] ->
+                    Year
+
+        middleOfNext u1 u2 =
+            (toMs u1 * highestMultiple (multiples u1) + toMs u2) / 2
+    in
+    findBest_ units_ Year
 
 
 {-| Finds the best fit multiple given the interval and it's best fit unit.
 -}
 findBestMultiple : Float -> Unit -> Int
 findBestMultiple interval unit =
-  let
-    findBest_ multiples_ =
-      case multiples_ of
-        m1 :: m2 :: rest ->
-          if interval <= (middleOfNext m1 m2)
-            then m1
-            else findBest_ (m2 :: rest)
+    let
+        findBest_ multiples_ =
+            case multiples_ of
+                m1 :: m2 :: rest ->
+                    if interval <= middleOfNext m1 m2 then
+                        m1
 
-        m :: _ -> m
-        []     -> 1
+                    else
+                        findBest_ (m2 :: rest)
 
-    middleOfNext m1 m2 =
-      (toFloat m1 * toMs unit + toFloat m2 * toMs unit) / 2
-  in
-  findBest_ (multiples unit)
+                m :: _ ->
+                    m
+
+                [] ->
+                    1
+
+        middleOfNext m1 m2 =
+            (toFloat m1 * toMs unit + toFloat m2 * toMs unit) / 2
+    in
+    findBest_ (multiples unit)
 
 
 {-| Find the best position for the first tick.
 -}
 beginAt : Time.Zone -> Time.Posix -> Unit -> Int -> Time.Posix
 beginAt zone min unit multiple =
-  min
-    |> Time.Extra.add (toExtraUnit unit) multiple zone
-    |> Time.Extra.ceiling (toExtraUnit unit) zone
+    let
+        firstWholeUnit : Time.Posix
+        firstWholeUnit =
+            Time.Extra.ceiling (toExtraUnit unit) zone min
+
+        firstInUnit : Int
+        firstInUnit =
+            unitFunc unit firstWholeUnit
+
+        multiMod : Int -> Int
+        multiMod x =
+            modBy multiple
+                (multiple - modBy multiple x)
+
+        addAmount : Int
+        addAmount =
+            case unit of
+                Month ->
+                    multiMod (firstInUnit - 1)
+
+                Day ->
+                    multiMod (firstInUnit - 1)
+
+                _ ->
+                    multiMod firstInUnit
+    in
+    firstWholeUnit
+        |> Time.Extra.add (toExtraUnit unit) addAmount zone
 
 
 next : Time.Zone -> Time.Posix -> Unit -> Int -> Time.Posix
 next zone timestamp unit multiple =
-  Time.Extra.add (toExtraUnit unit) multiple zone timestamp
+    Time.Extra.add (toExtraUnit unit) multiple zone timestamp
 
 
 getUnitChange : Unit -> Time.Zone -> Time.Posix -> Time.Posix -> Maybe Unit
 getUnitChange interval zone value next_ =
-  let
-    equalBy unit =
-      Time.Extra.diff (toExtraUnit unit) zone
-        (Time.Extra.floor (toExtraUnit unit) zone value)
-        (Time.Extra.floor (toExtraUnit unit) zone next_) == 0
+    let
+        equalBy unit =
+            Time.Extra.diff (toExtraUnit unit)
+                zone
+                (Time.Extra.floor (toExtraUnit unit) zone value)
+                (Time.Extra.floor (toExtraUnit unit) zone next_)
+                == 0
 
-    unitChange_ units =
-      case units of
-        unit :: rest ->
-          if toMs unit <= toMs interval then unitChange_ rest
-          else if not (equalBy unit) then Just unit
-          else Nothing
+        unitChange_ units =
+            case units of
+                unit :: rest ->
+                    if toMs unit <= toMs interval then
+                        unitChange_ rest
 
-        [] ->
-          Nothing
-  in
-  unitChange_ all
+                    else if not (equalBy unit) then
+                        Just unit
+
+                    else
+                        Nothing
+
+                [] ->
+                    Nothing
+    in
+    unitChange_ all
 
 
 
@@ -151,70 +204,176 @@ getUnitChange interval zone value next_ =
 
 all : List Unit
 all =
-  [ Millisecond, Second, Minute, Hour, Day, Month, Year ]
+    [ Millisecond, Second, Minute, Hour, Day, Month, Year ]
 
 
 allReversed : List Unit
 allReversed =
-  List.reverse all
+    List.reverse all
 
 
 toMs : Unit -> Float
 toMs unit =
-  case unit of
-    Millisecond -> 1
-    Second      -> 1000
-    Minute      -> 60000
-    Hour        -> 3600000
-    Day         -> 24 * 3600000
-    Month       -> 28 * 24 * 3600000
-    Year        -> 364 * 24 * 3600000
+    case unit of
+        Millisecond ->
+            1
+
+        Second ->
+            1000
+
+        Minute ->
+            60000
+
+        Hour ->
+            3600000
+
+        Day ->
+            24 * 3600000
+
+        Month ->
+            28 * 24 * 3600000
+
+        Year ->
+            364 * 24 * 3600000
 
 
 multiples : Unit -> List Int
 multiples unit =
-  case unit of
-    Millisecond -> [ 1, 2, 5, 10, 20, 25, 50, 100, 200, 500 ]
-    Second      -> [ 1, 2, 5, 10, 15, 30 ]
-    Minute      -> [ 1, 2, 5, 10, 15, 30 ]
-    Hour        -> [ 1, 2, 3, 4, 6, 8, 12 ]
-    Day         -> [ 1, 2 ]
-    Month       -> [ 1, 2, 3, 4, 6 ]
-    Year        -> [ 1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000, 10000 ]
+    case unit of
+        Millisecond ->
+            [ 2, 5, 10, 20, 25, 50, 100, 200, 500 ]
+
+        Second ->
+            [ 1, 2, 5, 10, 15, 30 ]
+
+        Minute ->
+            [ 1, 2, 5, 10, 15, 30 ]
+
+        Hour ->
+            [ 1, 2, 3, 4, 6, 8, 12 ]
+
+        Day ->
+            [ 1, 2, 7, 14 ]
+
+        Month ->
+            [ 1, 2, 3, 6 ]
+
+        Year ->
+            [ 1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000, 10000 ]
 
 
 toExtraUnit : Unit -> Time.Extra.Interval
 toExtraUnit unit =
-  case unit of
-    Millisecond -> Time.Extra.Millisecond
-    Second      -> Time.Extra.Second
-    Minute      -> Time.Extra.Minute
-    Hour        -> Time.Extra.Hour
-    Day         -> Time.Extra.Day
-    Month       -> Time.Extra.Month
-    Year        -> Time.Extra.Year
+    case unit of
+        Millisecond ->
+            Time.Extra.Millisecond
+
+        Second ->
+            Time.Extra.Second
+
+        Minute ->
+            Time.Extra.Minute
+
+        Hour ->
+            Time.Extra.Hour
+
+        Day ->
+            Time.Extra.Day
+
+        Month ->
+            Time.Extra.Month
+
+        Year ->
+            Time.Extra.Year
 
 
 highestMultiple : List Int -> Float
 highestMultiple =
-  List.reverse >> List.head >> Maybe.withDefault 0 >> toFloat
+    List.reverse >> List.head >> Maybe.withDefault 0 >> toFloat
 
 
 magnitude : Float -> Unit -> Float
 magnitude interval unit =
-  case unit of
-    Year ->
-      max 1 (Utils.magnitude interval)
+    case unit of
+        Year ->
+            max 1 (Utils.magnitude interval)
 
-    _ ->
-      1
+        _ ->
+            1
 
 
 floatToPosix : Float -> Time.Posix
 floatToPosix ms =
-  Time.millisToPosix (Basics.round ms)
+    Time.millisToPosix (Basics.round ms)
 
 
 posixsToFloat : Time.Posix -> Float
 posixsToFloat posix =
-  Basics.toFloat (Time.posixToMillis posix)
+    Basics.toFloat (Time.posixToMillis posix)
+
+
+unitFunc : Unit -> (Time.Posix -> Int)
+unitFunc unit_ =
+    case unit_ of
+        Millisecond ->
+            Time.toMillis Time.utc
+
+        Second ->
+            Time.toSecond Time.utc
+
+        Minute ->
+            Time.toMinute Time.utc
+
+        Hour ->
+            Time.toHour Time.utc
+
+        Day ->
+            Time.toDay Time.utc
+
+        Month ->
+            \time ->
+                Time.toMonth Time.utc time
+                    |> monthToInt
+
+        Year ->
+            Time.toSecond Time.utc
+
+
+monthToInt : Month -> Int
+monthToInt month =
+    case month of
+        Jan ->
+            1
+
+        Feb ->
+            2
+
+        Mar ->
+            3
+
+        Apr ->
+            4
+
+        May ->
+            5
+
+        Jun ->
+            6
+
+        Jul ->
+            7
+
+        Aug ->
+            8
+
+        Sep ->
+            9
+
+        Oct ->
+            10
+
+        Nov ->
+            11
+
+        Dec ->
+            12

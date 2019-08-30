@@ -38,7 +38,7 @@ module LineChart.Events exposing
 
     decoder : Events.Decoder
     decoder =
-        Events.map2 (,) Events.getNearest Events.getSvg
+        Events.map2 (\a b -> ( a, b )) Events.getNearest Events.getSvg
 
 @docs map, map2, map3
 

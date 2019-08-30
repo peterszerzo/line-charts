@@ -61,7 +61,7 @@ atOrigin =
     Intersection.atOrigin
 
 
-{-| Sets the intersection to your chosen x and y respectivily.
+{-| Sets the intersection to your chosen x and y respectively.
 
     intersectionConfig : Intersection.Config
     intersectionConfig =
@@ -76,7 +76,7 @@ at =
 
 
 {-| Sets the intersection to your chosen x and y, given the range and domain
-respectivily.
+respectively.
 
     intersectionConfig : Intersection.Config
     intersectionConfig =

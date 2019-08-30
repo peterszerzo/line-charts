@@ -133,7 +133,7 @@ update msg model =
 
 addCmd : Cmd Msg -> Model -> ( Model, Cmd Msg )
 addCmd cmd model =
-    ( model, Cmd.none )
+    ( model, cmd )
 
 
 

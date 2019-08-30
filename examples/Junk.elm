@@ -68,8 +68,8 @@ picassoImage system =
     in
     Svg.image
         [ SvgA.xlinkHref picassoImageLink
-        , SvgA.x (toString x)
-        , SvgA.y (toString y)
+        , SvgA.x (String.fromFloat x)
+        , SvgA.y (String.fromFloat y)
         , SvgA.height "100px"
         , SvgA.width "100px"
         ]

@@ -2,6 +2,7 @@ module Events1 exposing (main)
 
 import Browser
 import Color
+import Color.Manipulate
 import Html exposing (Html, div, h1, node, p, text)
 import Html.Attributes exposing (class)
 import LineChart as LineChart

@@ -1,5 +1,6 @@
 module LotsOfData exposing (main)
 
+import Browser
 import Html exposing (Html, div, h1, node, p, text)
 import Html.Attributes exposing (class)
 import LineChart as LineChart
@@ -20,10 +21,10 @@ import Random
 import Svg exposing (Attribute, Svg, g, text_, tspan)
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.program
-        { init = init
+    Browser.element
+        { init = \_ -> init
         , update = update
         , view = view
         , subscriptions = always Sub.none

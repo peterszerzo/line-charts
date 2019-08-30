@@ -30,7 +30,7 @@ import Svg
     chartConfig : LineChart.Config Data Msg
     chartConfig =
       { ...
-      , conatiner = Container.default
+      , container = Container.default
       , ...
       }
 

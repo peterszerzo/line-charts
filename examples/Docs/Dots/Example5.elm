@@ -1,5 +1,6 @@
-module Docs.Dots.Example3 exposing (main)
+module Docs.Dots.Example5 exposing (main)
 
+import Browser
 import Html
 import Html.Attributes exposing (class)
 import LineChart
@@ -17,7 +18,7 @@ import LineChart.Legends as Legends
 import LineChart.Line as Line
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
     Browser.sandbox
         { init = init

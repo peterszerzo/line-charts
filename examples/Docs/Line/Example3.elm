@@ -1,5 +1,6 @@
 module Docs.Line.Example3 exposing (main)
 
+import Browser
 import Color.Manipulate as Manipulate
 import Html
 import Html.Attributes exposing (class)
@@ -18,7 +19,7 @@ import LineChart.Legends as Legends
 import LineChart.Line as Line
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
     Browser.sandbox
         { init = init

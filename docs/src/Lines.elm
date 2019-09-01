@@ -350,16 +350,16 @@ main =
 source : String
 source =
     """
-  -- MODEL
+-- MODEL
 
 
-  type alias Model =
+type alias Model =
     { data : Data
     , hinted : Maybe Datum
     }
 
 
-  type alias Data =
+type alias Data =
     { denmark : List Datum
     , sweden : List Datum
     , iceland : List Datum
@@ -369,18 +369,18 @@ source =
     }
 
 
-  type alias Datum =
-    { time : Time.Time
+type alias Datum =
+    { time : Time.Posix
     , rain : Float
     }
 
 
 
-  -- INIT
+-- INIT
 
 
-  init : ( Model, Cmd Msg )
-  init =
+init : ( Model, Cmd Msg )
+init =
     ( { data = Data [] [] [] [] [] []
       , hinted = Nothing
       }
@@ -389,71 +389,71 @@ source =
 
 
 
-  -- API
+-- API
 
 
-  setData : Data -> Model -> Model
-  setData data model =
+setData : Data -> Model -> Model
+setData data model =
     { model | data = data }
 
 
-  setHint : Maybe Datum -> Model -> Model
-  setHint hinted model =
+setHint : Maybe Datum -> Model -> Model
+setHint hinted model =
     { model | hinted = hinted }
 
 
 
-  -- UPDATE
+-- UPDATE
 
 
-  type Msg
+type Msg
     = RecieveData Data
     | Hint (Maybe Datum)
 
 
-  update : Msg -> Model -> ( Model, Cmd Msg )
-  update msg model =
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
     case msg of
-      RecieveData numbers ->
-        model
-          |> setData numbers
-          |> addCmd Cmd.none
+        RecieveData numbers ->
+            model
+                |> setData numbers
+                |> addCmd Cmd.none
 
-      Hint point ->
-        model
-          |> setHint point
-          |> addCmd Cmd.none
+        Hint point ->
+            model
+                |> setHint point
+                |> addCmd Cmd.none
 
 
-  addCmd : Cmd Msg -> Model -> ( Model, Cmd Msg )
-  addCmd cmd model =
+addCmd : Cmd Msg -> Model -> ( Model, Cmd Msg )
+addCmd cmd model =
     ( model, Cmd.none )
 
 
 
-  -- VIEW
+-- VIEW
 
 
-  view : Model -> Html.Html Msg
-  view model =
+view : Model -> Html.Html Msg
+view model =
     Html.div []
-      [ LineChart.viewCustom (chartConfig model)
-          [ LineChart.line (Manipulate.lighten 0.2 Colors.cyan) Dots.circle "Denmark"   model.data.denmark
-          , LineChart.line (Manipulate.lighten 0   Colors.cyan) Dots.circle "Sweden"    model.data.sweden
-          , LineChart.line (Manipulate.lighten 0.2 Colors.blue) Dots.circle "Iceland"   model.data.iceland
-          , LineChart.line (Manipulate.lighten 0   Colors.blue) Dots.circle "Greenland" model.data.greenland
-          , LineChart.line (Manipulate.lighten 0   Colors.pink) Dots.circle "Norway"    model.data.norway
-          , LineChart.line (Manipulate.darken  0.2 Colors.pink) Dots.circle "Finland"   model.data.finland
-          ]
-      ]
+        [ LineChart.viewCustom (chartConfig model)
+            [ LineChart.line (Manipulate.lighten 0.2 Colors.cyan) Dots.circle "Denmark" model.data.denmark
+            , LineChart.line (Manipulate.lighten 0 Colors.cyan) Dots.circle "Sweden" model.data.sweden
+            , LineChart.line (Manipulate.lighten 0.2 Colors.blue) Dots.circle "Iceland" model.data.iceland
+            , LineChart.line (Manipulate.lighten 0 Colors.blue) Dots.circle "Greenland" model.data.greenland
+            , LineChart.line (Manipulate.lighten 0 Colors.pink) Dots.circle "Norway" model.data.norway
+            , LineChart.line (Manipulate.darken 0.2 Colors.pink) Dots.circle "Finland" model.data.finland
+            ]
+        ]
 
 
 
-  -- CHART CONFIG
+-- CHART CONFIG
 
 
-  chartConfig : Model -> LineChart.Config Datum Msg
-  chartConfig model =
+chartConfig : Model -> LineChart.Config Datum Msg
+chartConfig model =
     { y = yAxisConfig
     , x = xAxisConfig
     , container = containerConfig
@@ -470,189 +470,195 @@ source =
 
 
 
-  -- CHART CONFIG / AXES
+-- CHART CONFIG / AXES
 
 
-  yAxisConfig : Axis.Config Datum Msg
-  yAxisConfig =
+yAxisConfig : Axis.Config Datum Msg
+yAxisConfig =
     Axis.custom
-      { title = Title.atDataMax -10 -10 "Rain"
-      , variable = Just << .rain
-      , pixels = 450
-      , range = Range.padded 20 20
-      , axisLine = AxisLine.rangeFrame Colors.gray
-      , ticks = Ticks.custom <| \\dataRange axisRange ->
-          [ tickRain ( dataRange.min, "bits" )
-          , tickRain ( middle dataRange, "some" )
-          , tickRain ( dataRange.max, "lots" )
-          ]
-      }
+        { title = Title.atDataMax -10 -10 "Rain"
+        , variable = Just << .rain
+        , pixels = 450
+        , range = Range.padded 20 20
+        , axisLine = AxisLine.rangeFrame Colors.gray
+        , ticks =
+            Ticks.custom <|
+                \\dataRange axisRange ->
+                    [ tickRain ( dataRange.min, "bits" )
+                    , tickRain ( middle dataRange, "some" )
+                    , tickRain ( dataRange.max, "lots" )
+                    ]
+        }
 
 
-  xAxisConfig : Axis.Config Datum Msg
-  xAxisConfig =
+xAxisConfig : Axis.Config Datum Msg
+xAxisConfig =
     Axis.custom
-      { title = Title.default "Time"
-      , variable = Just << .time
-      , pixels = 1270
-      , range = Range.padded 20 20
-      , axisLine = AxisLine.none
-      , ticks = Ticks.timeCustom 10 tickTime
-      }
+        { title = Title.default "Time"
+        , variable = Just << toFloat << Time.posixToMillis << .time
+        , pixels = 1270
+        , range = Range.padded 20 20
+        , axisLine = AxisLine.none
+        , ticks = Ticks.timeCustom Time.utc 10 tickTime
+        }
 
 
 
-  -- CHART CONFIG / AXES / TICKS
+-- CHART CONFIG / AXES / TICKS
 
 
-  tickRain : ( Float, String ) -> Tick.Config msg
-  tickRain ( value, label ) =
+tickRain : ( Float, String ) -> Tick.Config msg
+tickRain ( value, label ) =
     Tick.custom
-      { position = value
-      , color = Colors.gray
-      , width = 1
-      , length = 5
-      , grid = True
-      , direction = Tick.negative
-      , label = Just (tickLabel label)
-      }
+        { position = value
+        , color = Colors.gray
+        , width = 1
+        , length = 5
+        , grid = True
+        , direction = Tick.negative
+        , label = Just (tickLabel label)
+        }
 
 
-  tickTime : Tick.Time -> Tick.Config msg
-  tickTime time =
-    let label = Tick.format time in
+tickTime : Tick.Time -> Tick.Config msg
+tickTime time =
+    let
+        label =
+            Tick.format time
+    in
     Tick.custom
-      { position = time.timestamp
-      , color = Colors.gray
-      , width = 1
-      , length = 5
-      , grid = False
-      , direction = Tick.negative
-      , label = Just (tickLabel label)
-      }
+        { position = toFloat <| Time.posixToMillis <| time.timestamp
+        , color = Colors.gray
+        , width = 1
+        , length = 5
+        , grid = False
+        , direction = Tick.negative
+        , label = Just (tickLabel label)
+        }
 
 
-  tickLabel : String -> Svg.Svg msg
-  tickLabel =
+tickLabel : String -> Svg.Svg msg
+tickLabel =
     Junk.label Colors.black
 
 
 
-  -- CHART CONFIG / CONTIANER
+-- CHART CONFIG / CONTIANER
 
 
-  containerConfig : Container.Config Msg
-  containerConfig =
+containerConfig : Container.Config Msg
+containerConfig =
     Container.custom
-      { attributesHtml = []
-      , attributesSvg = []
-      , size = Container.relative
-      , margin = Container.Margin 30 180 30 70
-      , id = "line-chart-lines"
-      }
+        { attributesHtml = []
+        , attributesSvg = []
+        , size = Container.relative
+        , margin = Container.Margin 30 180 30 70
+        , id = "line-chart-lines"
+        }
 
 
 
-  -- CHART CONFIG / EVENTS
+-- CHART CONFIG / EVENTS
 
 
-  eventsConfig : Events.Config Datum Msg
-  eventsConfig =
+eventsConfig : Events.Config Datum Msg
+eventsConfig =
     Events.custom
-      [ Events.onMouseMove Hint Events.getNearest
-      , Events.onMouseLeave (Hint Nothing)
-      ]
+        [ Events.onMouseMove Hint Events.getNearest
+        , Events.onMouseLeave (Hint Nothing)
+        ]
 
 
 
-  -- CHART CONFIG / LINE
+-- CHART CONFIG / LINE
 
 
-  lineConfig : Maybe Datum -> Line.Config Datum
-  lineConfig maybeHovered =
+lineConfig : Maybe Datum -> Line.Config Datum
+lineConfig maybeHovered =
     Line.custom (toLineStyle maybeHovered)
 
 
-  toLineStyle : Maybe Datum -> List Datum -> Line.Style
-  toLineStyle maybeHovered lineData =
+toLineStyle : Maybe Datum -> List Datum -> Line.Style
+toLineStyle maybeHovered lineData =
     case maybeHovered of
-      Nothing ->
-        Line.style 1 identity
+        Nothing ->
+            Line.style 1 identity
 
-      Just hovered ->
-        if List.any ((==) hovered) lineData then
-          Line.style 2 identity
-        else
-          Line.style 1 (Manipulate.grayscale)
+        Just hovered ->
+            if List.any ((==) hovered) lineData then
+                Line.style 2 identity
 
-
-
-  -- UTILS
+            else
+                Line.style 1 Manipulate.grayscale
 
 
-  round10 : Float -> Float
-  round10 float =
+
+-- UTILS
+
+
+round10 : Float -> Float
+round10 float =
     toFloat (round (float * 10)) / 10
 
 
-  middle : Coordinate.Range -> Float
-  middle r =
+middle : Coordinate.Range -> Float
+middle r =
     r.min + (r.max - r.min) / 2
 
 
 
-  -- GENERATE DATA
+-- GENERATE DATA
 
 
-  generateData : Cmd Msg
-  generateData =
+generateData : Cmd Msg
+generateData =
     let
-      genNumbers min max =
-        Random.list 10 (Random.float min max)
+        genNumbers min max =
+            Random.list 10 (Random.float min max)
 
-      compile a b c d e f =
-        Data (toData a) (toData b) (toData c) (toData d) (toData e) (toData f)
+        compile a b c d e f =
+            Data (toData a) (toData b) (toData c) (toData d) (toData e) (toData f)
     in
     Random.Pipeline.generate compile
-      |> Random.Pipeline.with (genNumbers 50 90)
-      |> Random.Pipeline.with (genNumbers 20 60)
-      |> Random.Pipeline.with (genNumbers 30 60)
-      |> Random.Pipeline.with (genNumbers 40 90)
-      |> Random.Pipeline.with (genNumbers 80 100)
-      |> Random.Pipeline.with (genNumbers 70 90)
-      |> Random.Pipeline.send RecieveData
+        |> Random.Pipeline.with (genNumbers 50 90)
+        |> Random.Pipeline.with (genNumbers 20 60)
+        |> Random.Pipeline.with (genNumbers 30 60)
+        |> Random.Pipeline.with (genNumbers 40 90)
+        |> Random.Pipeline.with (genNumbers 80 100)
+        |> Random.Pipeline.with (genNumbers 70 90)
+        |> Random.Pipeline.send RecieveData
 
 
-  toData : List Float -> List Datum
-  toData numbers =
+toData : List Float -> List Datum
+toData numbers =
     let
-      toDatum index rain =
-        Datum (indexToTime index) rain
+        toDatum index rain =
+            Datum (indexToTime index) rain
     in
     List.indexedMap toDatum numbers
 
 
-  indexToTime : Int -> Time.Time
-  indexToTime index =
-    Time.hour * 24 * 365 * 30 + xInterval * toFloat index
+indexToTime : Int -> Time.Posix
+indexToTime index =
+    -- Every month, starting at Jan 2000
+    Time.Extra.add Time.Extra.Month
+        index
+        Time.utc
+        (Time.Extra.partsToPosix Time.utc <|
+            Time.Extra.Parts 2000 Time.Jan 1 0 0 0 0
+        )
 
 
-  xInterval : Time.Time
-  xInterval =
-    Time.hour * 24 * 31
+
+-- PROGRAM
 
 
-
-  -- PROGRAM
-
-
-  main : Program Never Model Msg
-  main =
-    Html.program
-      { init = init
-      , update = update
-      , view = view
-      , subscriptions = always Sub.none
-      }
-
-  """
+main : Program () Model Msg
+main =
+    Browser.element
+        { init = \\_ -> init
+        , update = update
+        , view = view
+        , subscriptions = always Sub.none
+        }
+"""

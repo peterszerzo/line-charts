@@ -516,10 +516,21 @@ round100 float =
 source : String
 source =
     """
-  -- MODEL
+main : Program () Model Msg
+main =
+    Browser.element
+        { init = \\_ -> init
+        , update = update
+        , view = view
+        , subscriptions = always Sub.none
+        }
 
 
-  type alias Model =
+
+-- MODEL
+
+
+type alias Model =
     { data : Data
     , hovered : Maybe Float
     , selection : Maybe Selection
@@ -528,25 +539,31 @@ source =
     }
 
 
-  type alias Selection =
+type alias Selection =
     { xStart : Float
     , xEnd : Float
     }
 
 
-  type alias Data =
-    { nora : List Datum
-    , noah : List Datum
-    , nina : List Datum
+type alias Data =
+    { sanJose : List Datum
+    , sanDiego : List Datum
+    , sanFransisco : List Datum
+    }
+
+
+type alias Datum =
+    { time : Time.Posix
+    , displacement : Float
     }
 
 
 
-  -- INIT
+-- INIT
 
 
-  init : ( Model, Cmd Msg )
-  init =
+init : ( Model, Cmd Msg )
+init =
     ( { data = Data [] [] []
       , hovered = Nothing
       , selection = Nothing
@@ -557,295 +574,355 @@ source =
     )
 
 
-  generateData : Cmd Msg
-  generateData =
+generateData : Cmd Msg
+generateData =
     let
-      genNumbers =
-        Random.list 201 (Random.float 0 20)
+        genNumbers min max =
+            Random.list 201 (Random.float min max)
+
+        compile a b c =
+            Data (toData a) (toData b) (toData c)
     in
-    Random.map3 (,,) genNumbers genNumbers genNumbers
-      |> Random.generate RecieveData
+    Random.Pipeline.generate compile
+        |> Random.Pipeline.with (genNumbers -10 10)
+        |> Random.Pipeline.with (genNumbers -7 7)
+        |> Random.Pipeline.with (genNumbers -8 8)
+        |> Random.Pipeline.send RecieveData
+
+
+toData : List Float -> List Datum
+toData numbers =
+    let
+        toDatum index displacement =
+            Datum (indexToTime index) displacement
+    in
+    List.indexedMap toDatum numbers
+
+
+indexToTime : Int -> Time.Posix
+indexToTime index =
+    -- Every 15 minutes, starting at Jan 2015
+    Time.Extra.add Time.Extra.Minute
+        (15 * index)
+        Time.utc
+        (Time.Extra.partsToPosix Time.utc <|
+            Time.Extra.Parts 2015 Time.Jan 1 0 0 0 0
+        )
 
 
 
-  -- MODEL API
+-- MODEL API
 
 
-  setData : ( List Float, List Float, List Float ) -> Model -> Model
-  setData ( n1, n2, n3 ) model =
-    { model | data = Data (toData n1) (toData n2) (toData n3) }
+setData : Data -> Model -> Model
+setData data model =
+    { model | data = data }
 
 
-  toData : List Float -> List Datum
-  toData numbers =
-    List.indexedMap (\\i -> Datum (toFloat i)) numbers
-
-
-  setSelection : Maybe Selection -> Model -> Model
-  setSelection selection model =
+setSelection : Maybe Selection -> Model -> Model
+setSelection selection model =
     { model | selection = selection }
 
 
-  setDragging : Bool -> Model -> Model
-  setDragging dragging model =
+setDragging : Bool -> Model -> Model
+setDragging dragging model =
     { model | dragging = dragging }
 
 
-  setHovered : Maybe Float -> Model -> Model
-  setHovered hovered model =
+setHovered : Maybe Float -> Model -> Model
+setHovered hovered model =
     { model | hovered = hovered }
 
 
-  setHint : Maybe Datum -> Model -> Model
-  setHint hinted model =
+setHint : Maybe Datum -> Model -> Model
+setHint hinted model =
     { model | hinted = hinted }
 
 
-  getSelectionXStart : Float -> Model -> Float
-  getSelectionXStart hovered model =
+getSelectionXStart : Float -> Model -> Float
+getSelectionXStart hovered model =
     case model.selection of
-      Just selection -> selection.xStart
-      Nothing        -> hovered
+        Just selection ->
+            selection.xStart
+
+        Nothing ->
+            hovered
 
 
 
-  -- UPDATE
+-- UPDATE
 
 
-  type Msg
-    = RecieveData ( List Float, List Float, List Float )
-    -- Chart Main
-    | Hold Datum
-    | Move Datum
-    | Drop Datum
-    | LeaveChart Datum
-    | LeaveContainer Datum
-    -- Chart Zoom
+type Msg
+    = RecieveData Data
+      -- Chart Main
+    | Hold Coordinate.Point
+    | Move Coordinate.Point
+    | Drop Coordinate.Point
+    | LeaveChart Coordinate.Point
+    | LeaveContainer Coordinate.Point
+      -- Chart Zoom
     | Hint (Maybe Datum)
 
 
-  update : Msg -> Model -> ( Model, Cmd Msg )
-  update msg model =
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
     case msg of
-      RecieveData numbers ->
-        model
-          |> setData numbers
-          |> addCmd Cmd.none
+        RecieveData data ->
+            model
+                |> setData data
+                |> addCmd Cmd.none
 
-      Hold point ->
-        model
-          |> setSelection Nothing
-          |> setDragging True
-          |> addCmd Cmd.none
+        Hold point ->
+            model
+                |> setSelection Nothing
+                |> setDragging True
+                |> addCmd Cmd.none
 
-      Move point ->
-        if model.dragging then
-          let
-            start = getSelectionXStart point.x model
-            newSelection = Selection start point.x
-          in
-          model
-            |> setSelection (Just newSelection)
-            |> setHovered (Just point.x)
-            |> addCmd Cmd.none
-        else
-          model
-            |> setHovered (Just point.x)
-            |> addCmd Cmd.none
+        Move point ->
+            if model.dragging then
+                let
+                    start =
+                        getSelectionXStart point.x model
 
-      Drop point ->
-        if point.x == getSelectionXStart point.x model then
-          model
-            |> setSelection Nothing
-            |> setDragging False
-            |> addCmd Cmd.none
-        else
-          model
-            |> setDragging False
-            |> addCmd Cmd.none
+                    newSelection =
+                        Selection start point.x
+                in
+                model
+                    |> setSelection (Just newSelection)
+                    |> setHovered (Just point.x)
+                    |> addCmd Cmd.none
 
-      LeaveChart point ->
-        model
-          |> setHovered Nothing
-          |> addCmd Cmd.none
+            else
+                model
+                    |> setHovered (Just point.x)
+                    |> addCmd Cmd.none
 
-      LeaveContainer point ->
-        model
-          |> setDragging False
-          |> setHovered Nothing
-          |> addCmd Cmd.none
+        Drop point ->
+            if point.x == getSelectionXStart point.x model then
+                model
+                    |> setSelection Nothing
+                    |> setDragging False
+                    |> addCmd Cmd.none
 
-      Hint point ->
-        model
-          |> setHint point
-          |> addCmd Cmd.none
+            else
+                model
+                    |> setDragging False
+                    |> addCmd Cmd.none
+
+        LeaveChart point ->
+            model
+                |> setHovered Nothing
+                |> addCmd Cmd.none
+
+        LeaveContainer point ->
+            model
+                |> setDragging False
+                |> setHovered Nothing
+                |> addCmd Cmd.none
+
+        Hint datum ->
+            model
+                |> setHint datum
+                |> addCmd Cmd.none
 
 
-  addCmd : Cmd Msg -> Model -> ( Model, Cmd Msg )
-  addCmd cmd model =
+addCmd : Cmd Msg -> Model -> ( Model, Cmd Msg )
+addCmd cmd model =
     ( model, Cmd.none )
 
 
 
-  -- VIEW
+-- VIEW
 
 
-  view : Model -> Html.Html Msg
-  view model =
-    let
-      style =
-        [ ( "display", "flex" ) ]
-
-      content =
+view : Model -> Html.Html Msg
+view model =
+    Html.div [] <|
         case model.selection of
-          Nothing ->
-            [ viewPlaceholder
-            , viewChartMain model
-            ]
+            Nothing ->
+                [ viewPlaceholder
+                , viewChartMain model
+                ]
 
-          Just selection ->
-            if selection.xStart == selection.xEnd then
-              [ viewPlaceholder
-              , viewChartMain model
-              ]
-            else
-              [ viewChartZoom model selection
-              , viewChartMain model
-              ]
-    in
-    Html.div [ Html.Attributes.style style ] content
+            Just selection ->
+                if selection.xStart == selection.xEnd then
+                    [ viewPlaceholder
+                    , viewChartMain model
+                    ]
+
+                else
+                    [ viewChartZoom model selection
+                    , viewChartMain model
+                    ]
 
 
-  viewPlaceholder : Html.Html Msg
-  viewPlaceholder =
+viewPlaceholder : Html.Html Msg
+viewPlaceholder =
     Html.div
-      [ Html.Attributes.style
-          [ ( "margin", "40px 25px 30px 70px" )
-          , ( "width", "505px" )
-          , ( "height", "360px" )
-          , ( "background", "#4646461a" )
-          , ( "text-align", "center" )
-          , ( "line-height", "340px" )
-          ]
-      ]
-      [ Html.text "Select a range on the graph to the right!" ]
+        [ Html.Attributes.class "view__selection__placeholder" ]
+        [ viewInnerPlaceholder ]
+
+
+viewInnerPlaceholder : Html.Html Msg
+viewInnerPlaceholder =
+    Html.div
+        [ Html.Attributes.class "view__selection__placeholder__inner" ]
+        [ viewPlaceholderText ]
+
+
+viewPlaceholderText : Html.Html Msg
+viewPlaceholderText =
+    Html.div
+        [ Html.Attributes.class "view__selection__placeholder__inner__text" ]
+        [ Html.text "Select a range on the chart to the right!" ]
 
 
 
-  -- MAIN CHART
+-- MAIN CHART
 
 
-  viewChartMain : Model -> Html.Html Msg
-  viewChartMain model =
+viewChartMain : Model -> Html.Html Msg
+viewChartMain model =
     viewChart model.data
-      { range = Range.default
-      , junk = junkConfig model
-      , legends = Legends.default
-      , events = events
-      , width = 670
-      , margin = Container.Margin 30 100 60 70
-      , dots = Dots.custom (Dots.full 0)
-      , id = "line-chart"
-      }
-
-
-  events : Events.Config Datum Msg
-  events =
-    let
-      options bool =
-        { stopPropagation = True
-        , preventDefault = True
-        , catchOutsideChart = bool
+        { range = Range.default
+        , junk = junkConfig model
+        , legends = Legends.default
+        , events = myEvents
+        , width = 670
+        , margin = Container.Margin 30 165 30 70
+        , dots = Dots.custom (Dots.full 0)
+        , id = "line-chart-selection-main"
         }
+
+
+myEvents : Events.Config Datum Msg
+myEvents =
+    let
+        options bool =
+            { stopPropagation = True
+            , preventDefault = True
+            , catchOutsideChart = bool
+            }
     in
     Events.custom
-      [ Events.onWithOptions "mousedown"  (options False) Hold           Events.getData
-      , Events.onWithOptions "mousemove"  (options False) Move           Events.getData
-      , Events.onWithOptions "mouseup"    (options True)  Drop           Events.getData
-      , Events.onWithOptions "mouseleave" (options False) LeaveChart     Events.getData
-      , Events.onWithOptions "mouseleave" (options True)  LeaveContainer Events.getData
-      ]
+        [ Events.onWithOptions "mousedown" (options False) Hold Events.getData
+        , Events.onWithOptions "mousemove" (options False) Move Events.getData
+        , Events.onWithOptions "mouseup" (options True) Drop Events.getData
+        , Events.onWithOptions "mouseleave" (options False) LeaveChart Events.getData
+        , Events.onWithOptions "mouseleave" (options True) LeaveContainer Events.getData
+        ]
 
 
-  junkConfig : Model -> Junk.Config Datum msg
-  junkConfig model =
-    Junk.custom <| \\system ->
-      { below = below system model.selection
-      , above = above system model.hovered
-      , html = []
-      }
+junkConfig : Model -> Junk.Config Datum msg
+junkConfig model =
+    Junk.custom <|
+        \\system ->
+            { below = below system model.selection
+            , above = above system model.hovered
+            , html = []
+            }
 
 
-  below : Coordinate.System -> Maybe Selection -> List (Svg.Svg msg)
-  below system selection =
+below : Coordinate.System -> Maybe Selection -> List (Svg.Svg msg)
+below system selection =
     case selection of
-      Just { xStart, xEnd } ->
-        let
-          attributes =
-            [ Svg.Attributes.fill "#4646461a" ]
+        Just { xStart, xEnd } ->
+            let
+                attributes =
+                    [ Svg.Attributes.fill "#4646461a" ]
 
-          ( yStart, yEnd ) =
-            ( system.y.min, system.y.max )
+                ( yStart, yEnd ) =
+                    ( system.y.min, system.y.max )
 
-          viewSelection =
-            Junk.rectangle system attributes xStart xEnd yStart yEnd
-        in
-        [ viewSelection ]
+                viewSelection =
+                    Junk.rectangle system attributes xStart xEnd yStart yEnd
+            in
+            [ viewSelection ]
 
-      Nothing ->
-        []
-
-
-  above : Coordinate.System -> Maybe Float -> List (Svg.Svg msg)
-  above system hovered =
-    case hovered of
-      Just hovered ->
-        [ Junk.vertical system [] hovered ]
-
-      Nothing ->
-        []
+        Nothing ->
+            []
 
 
-
-  -- ZOOM CHART
-
-
-  viewChartZoom : Model -> Selection -> Html.Html Msg
-  viewChartZoom model selection =
-    viewChart model.data
-      { range = xAxisRangeConfig selection
-      , junk =
-          Junk.hoverOne model.hinted
-            [ ( "x", toString << round100 << .x )
-            , ( "y", toString << round100 << .y )
+above : Coordinate.System -> Maybe Float -> List (Svg.Svg msg)
+above system maybeHovered =
+    case maybeHovered of
+        Just hovered ->
+            [ Junk.vertical system [] hovered
+            , title system
             ]
-      , events = Events.hoverOne Hint
-      , legends = Legends.none
-      , dots = Dots.hoverOne model.hinted
-      , width = 600
-      , margin = Container.Margin 30 25 60 70
-      , id = "line-chart-zoom"
-      }
+
+        Nothing ->
+            [ title system ]
 
 
-  xAxisRangeConfig : Selection -> Range.Config
-  xAxisRangeConfig selection =
+title : Coordinate.System -> Svg.Svg msg
+title system =
+    Junk.labelAt system system.x.max system.y.max 20 -5 "start" Colors.black "Earthquake in"
+
+
+
+-- ZOOM CHART
+
+
+viewChartZoom : Model -> Selection -> Html.Html Msg
+viewChartZoom model selection =
+    viewChart model.data
+        { range = xAxisRangeConfig selection
+        , junk =
+            Junk.hoverOne model.hinted
+                [ ( "time", formatX )
+                , ( "displacement", formatY )
+                ]
+        , events = Events.hoverOne Hint
+        , legends = Legends.none
+        , dots = Dots.hoverOne model.hinted
+        , width = 670
+        , margin = Container.Margin 30 60 30 75
+        , id = "line-chart-zoom"
+        }
+
+
+xAxisRangeConfig : Selection -> Range.Config
+xAxisRangeConfig selection =
     let
-      xStart =
-        min selection.xStart selection.xEnd
+        xStart =
+            min selection.xStart selection.xEnd
 
-      xEnd =
-        max selection.xStart selection.xEnd
+        xEnd =
+            max selection.xStart selection.xEnd
     in
     Range.window xStart xEnd
 
 
+formatX : Datum -> String
+formatX datum =
+    DateFormat.format
+        [ DateFormat.hourFixed
+        , DateFormat.text ":"
+        , DateFormat.minuteFixed
+        , DateFormat.amPmLowercase
+        , DateFormat.text ", "
+        , DateFormat.dayOfMonthSuffix
+        , DateFormat.text ". "
+        , DateFormat.monthNameAbbreviated
+        , DateFormat.text ", "
+        , DateFormat.yearNumber
+        ]
+        Time.utc
+        datum.time
 
 
-  -- VIEW CHART
+formatY : Datum -> String
+formatY datum =
+    String.fromFloat (round100 datum.displacement)
 
 
-  type alias Config =
+
+-- VIEW CHART
+
+
+type alias Config =
     { range : Range.Config
     , junk : Junk.Config Datum Msg
     , events : Events.Config Datum Msg
@@ -857,50 +934,63 @@ source =
     }
 
 
-  viewChart : Data -> Config -> Html.Html Msg
-  viewChart data { range, junk, events, legends, dots, width, margin, id } =
+viewChart : Data -> Config -> Html.Html Msg
+viewChart data { range, junk, events, legends, dots, width, margin, id } =
+    let
+        containerStyles =
+            [ Html.Attributes.style "display" "inline-block"
+            , Html.Attributes.style "width" "50%"
+            , Html.Attributes.style "height" "100%"
+            ]
+    in
     LineChart.viewCustom
-      { y = Axis.default 450 "y" .y
-      , x =
-          Axis.custom
-            { title = Title.default "x"
-            , variable = Just << .x
-            , pixels = width
-            , range = range
-            , axisLine = AxisLine.rangeFrame Colors.gray
-            , ticks = Ticks.float 5
-            }
-      , container =
-          Container.custom
-            { attributesHtml = [ Html.Attributes.style [ ( "display", "inline-block" ) ] ]
-            , attributesSvg = []
-            , size = Container.static
-            , margin = margin
-            , id = "chart-id"
-            }
-      , interpolation = Interpolation.monotone
-      , intersection = Intersection.default
-      , legends = legends
-      , events = events
-      , junk = junk
-      , grid = Grid.default
-      , area = Area.default
-      , line = Line.default
-      , dots = dots
-      }
-      [ LineChart.line Colors.pink Dots.circle "Nora" data.nora
-      , LineChart.line Colors.cyan Dots.circle "Noah" data.noah
-      , LineChart.line Colors.blue Dots.circle "Nina" data.nina
-      ]
+        { y =
+            Axis.custom
+                { title = Title.atAxisMax 50 0 "displacement"
+                , variable = Just << .displacement
+                , pixels = 450
+                , range = Range.padded 20 20
+                , axisLine = AxisLine.rangeFrame Colors.gray
+                , ticks = Ticks.float 5
+                }
+        , x =
+            Axis.custom
+                { title = Title.default "time"
+                , variable = Just << toFloat << Time.posixToMillis << .time
+                , pixels = width
+                , range = range
+                , axisLine = AxisLine.rangeFrame Colors.gray
+                , ticks = Ticks.time Time.utc 5
+                }
+        , container =
+            Container.custom
+                { attributesHtml = containerStyles
+                , attributesSvg = []
+                , size = Container.static
+                , margin = margin
+                , id = id
+                }
+        , interpolation = Interpolation.monotone
+        , intersection = Intersection.default
+        , legends = legends
+        , events = events
+        , junk = junk
+        , grid = Grid.default
+        , area = Area.default
+        , line = Line.default
+        , dots = dots
+        }
+        [ LineChart.line Colors.pink Dots.circle "San Jose" data.sanJose
+        , LineChart.line Colors.cyan Dots.circle "San Fransisco" data.sanFransisco
+        , LineChart.line Colors.blue Dots.circle "San Diego" data.sanDiego
+        ]
 
 
 
-  -- UTILS
+-- UTILS
 
 
-  round100 : Float -> Float
-  round100 float =
+round100 : Float -> Float
+round100 float =
     toFloat (round (float * 100)) / 100
-
-
-  """
+"""

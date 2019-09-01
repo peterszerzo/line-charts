@@ -236,34 +236,34 @@ main =
 source : String
 source =
     """
-  -- MODEL
+-- MODEL
 
 
-  type alias Model =
+type alias Model =
     { data : Data
     , hinted : List Datum
     }
 
 
-  type alias Data =
+type alias Data =
     { nora : List Datum
     , noah : List Datum
     , nina : List Datum
     }
 
 
-  type alias Datum =
-    { time : Time.Time
+type alias Datum =
+    { time : Time.Posix
     , velocity : Float
     }
 
 
 
-  -- INIT
+-- INIT
 
 
-  init : ( Model, Cmd Msg )
-  init =
+init : ( Model, Cmd Msg )
+init =
     ( { data = Data [] [] []
       , hinted = []
       }
@@ -271,97 +271,71 @@ source =
     )
 
 
-  generateData : Cmd Msg
-  generateData =
-    let
-      genNumbers =
-        Random.list 40 (Random.float 5 20)
-    in
-    Random.map3 (,,) genNumbers genNumbers genNumbers
-      |> Random.generate RecieveData
+
+-- API
 
 
-
-  -- API
-
-
-  setData : ( List Float, List Float, List Float ) -> Model -> Model
-  setData ( n1, n2, n3 ) model =
-    { model | data = Data (toData n1) (toData n2) (toData n3) }
+setData : Data -> Model -> Model
+setData data model =
+    { model | data = data }
 
 
-  toData : List Float -> List Datum
-  toData numbers =
-    let
-      toDatum index velocity =
-        Datum (indexToTime index) velocity
-    in
-    List.indexedMap toDatum numbers
-
-
-  indexToTime : Int -> Time.Time
-  indexToTime index =
-    Time.hour * 24 * 356 * 45 + -- 45 years
-    Time.hour * 24 * 30 + -- a month
-    Time.hour * 1 * toFloat index -- hours from first datum
-
-
-  setHint : List Datum -> Model -> Model
-  setHint hinted model =
+setHint : List Datum -> Model -> Model
+setHint hinted model =
     { model | hinted = hinted }
 
 
 
-  -- UPDATE
+-- UPDATE
 
 
-  type Msg
-    = RecieveData ( List Float, List Float, List Float )
+type Msg
+    = RecieveData Data
     | Hint (List Datum)
 
 
-  update : Msg -> Model -> ( Model, Cmd Msg )
-  update msg model =
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
     case msg of
-      RecieveData numbers ->
-        model
-          |> setData numbers
-          |> addCmd Cmd.none
+        RecieveData data ->
+            model
+                |> setData data
+                |> addCmd Cmd.none
 
-      Hint points ->
-        model
-          |> setHint points
-          |> addCmd Cmd.none
+        Hint points ->
+            model
+                |> setHint points
+                |> addCmd Cmd.none
 
 
-  addCmd : Cmd Msg -> Model -> ( Model, Cmd Msg )
-  addCmd cmd model =
+addCmd : Cmd Msg -> Model -> ( Model, Cmd Msg )
+addCmd cmd model =
     ( model, Cmd.none )
 
 
 
-  -- VIEW
+-- VIEW
 
 
-  view : Model -> Html.Html Msg
-  view model =
+view : Model -> Html.Html Msg
+view model =
     Html.div []
-      [ LineChart.viewCustom (chartConfig model)
-          [ LineChart.line Colors.pink Dots.diamond  "Nora" model.data.nora
-          , LineChart.line Colors.cyan Dots.circle   "Noah" model.data.noah
-          , LineChart.line Colors.blue Dots.triangle "Nina" model.data.nina
-          ]
-      ]
+        [ LineChart.viewCustom (chartConfig model)
+            [ LineChart.line Colors.pink Dots.diamond "Nora" model.data.nora
+            , LineChart.line Colors.cyan Dots.circle "Noah" model.data.noah
+            , LineChart.line Colors.blue Dots.triangle "Nina" model.data.nina
+            ]
+        ]
 
 
 
-  -- CHART CONFIG
+-- CHART CONFIG
 
 
-  chartConfig : Model -> LineChart.Config Datum Msg
-  chartConfig model =
+chartConfig : Model -> LineChart.Config Datum Msg
+chartConfig model =
     { y = Axis.default 450 "velocity" .velocity
-    , x = Axis.time 1270 "time" .time
+    , x = Axis.time Time.utc 1270 "time" (toFloat << Time.posixToMillis << .time)
     , container = containerConfig
     , interpolation = Interpolation.monotone
     , intersection = Intersection.default
@@ -375,49 +349,94 @@ source =
     }
 
 
-  containerConfig : Container.Config Msg
-  containerConfig =
+containerConfig : Container.Config Msg
+containerConfig =
     Container.custom
-      { attributesHtml = []
-      , attributesSvg = []
-      , size = Container.relative
-      , margin = Container.Margin 30 100 30 70
-      , id = "line-chart-area"
-      }
+        { attributesHtml = []
+        , attributesSvg = []
+        , size = Container.relative
+        , margin = Container.Margin 30 100 30 70
+        , id = "line-chart-area"
+        }
 
 
-  formatX : Datum -> String
-  formatX datum =
-    Date.Format.format "%e. %b, %Y" (Date.fromTime datum.time)
+formatX : Datum -> String
+formatX datum =
+    DateFormat.format
+        [ DateFormat.dayOfMonthSuffix
+        , DateFormat.text ". "
+        , DateFormat.monthNameAbbreviated
+        , DateFormat.text ", "
+        , DateFormat.yearNumber
+        ]
+        Time.utc
+        datum.time
 
 
-  formatY : Datum -> String
-  formatY datum =
-    toString (round100 datum.velocity) ++ " m/s"
+formatY : Datum -> String
+formatY datum =
+    String.fromFloat (round100 datum.velocity) ++ " m/s"
 
 
 
-  -- UTILS
+-- UTILS
 
 
-  round100 : Float -> Float
-  round100 float =
+round100 : Float -> Float
+round100 float =
     toFloat (round (float * 100)) / 100
 
 
 
-
-  -- PROGRAM
-
-
-  main : Program Never Model Msg
-  main =
-    Html.program
-      { init = init
-      , update = update
-      , view = view
-      , subscriptions = always Sub.none
-      }
+-- GENERATE DATA
 
 
-  """
+generateData : Cmd Msg
+generateData =
+    let
+        genNumbers =
+            Random.list 40 (Random.float 5 20)
+
+        compile a b c =
+            Data (toData a) (toData b) (toData c)
+    in
+    Random.Pipeline.generate compile
+        |> Random.Pipeline.with genNumbers
+        |> Random.Pipeline.with genNumbers
+        |> Random.Pipeline.with genNumbers
+        |> Random.Pipeline.send RecieveData
+
+
+toData : List Float -> List Datum
+toData numbers =
+    let
+        toDatum index velocity =
+            Datum (indexToTime index) velocity
+    in
+    List.indexedMap toDatum numbers
+
+
+indexToTime : Int -> Time.Posix
+indexToTime index =
+    -- Every 3 hours, starting at Jan 2000
+    Time.Extra.add Time.Extra.Hour
+        (3 * index)
+        Time.utc
+        (Time.Extra.partsToPosix Time.utc <|
+            Time.Extra.Parts 2000 Time.Jan 1 0 0 0 0
+        )
+
+
+
+-- PROGRAM
+
+
+main : Program () Model Msg
+main =
+    Browser.element
+        { init = \\_ -> init
+        , update = update
+        , view = view
+        , subscriptions = always Sub.none
+        }
+"""

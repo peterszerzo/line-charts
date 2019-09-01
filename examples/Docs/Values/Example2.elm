@@ -55,7 +55,7 @@ xAxisConfig : Axis.Config Data msg
 xAxisConfig =
     Axis.custom
         { title = Title.default "Time"
-        , variable = Just << .date
+        , variable = Just << (toFloat << Time.posixToMillis << .date)
         , pixels = 700
         , range = Range.default
         , axisLine = AxisLine.rangeFrame Colors.gray
@@ -72,7 +72,7 @@ ticksConfig =
 
 valuesWithin : Coordinate.Range -> List Tick.Time
 valuesWithin =
-    Values.time 5
+    Values.time Time.utc 5
 
 
 
@@ -84,7 +84,7 @@ type alias Data =
     , weight : Float
     , height : Float
     , income : Float
-    , date : Time.Time
+    , date : Time.Posix
     }
 
 
@@ -120,16 +120,29 @@ average =
     ]
 
 
-dateInterval : Int -> Time.Time
+
+-- Creates a magic time interval
+
+
+dateInterval : Float -> Time.Posix
 dateInterval i =
-    4 * year + toFloat i * 21 * year
+    let
+        magicHoursInterval =
+            4 + i * 21
+
+        -- Feel free to change this
+    in
+    magicHoursInterval |> hoursToMillis |> Time.millisToPosix
 
 
-day : Time.Time
-day =
-    24 * Time.hour
+
+-- Converts hours to miliseconds
 
 
-year : Time.Time
-year =
-    356 * day
+hoursToMillis : Float -> Int
+hoursToMillis h =
+    h * millisPerHour |> round
+
+
+millisPerHour =
+    60 * 60 * 1000

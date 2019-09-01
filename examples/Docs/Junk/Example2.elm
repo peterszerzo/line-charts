@@ -1,5 +1,6 @@
 module Docs.Junk.Example2 exposing (main)
 
+import Browser
 import Html
 import LineChart
 import LineChart.Area as Area
@@ -19,7 +20,7 @@ import Svg
 import Svg.Attributes
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
     Browser.sandbox
         { init = init
@@ -96,9 +97,9 @@ chart model =
 
 
 junk : Maybe Coordinate.Point -> Coordinate.System -> Junk.Layers msg
-junk hovered system =
+junk maybeHovered system =
     { below =
-        case hovered of
+        case maybeHovered of
             Just hovered ->
                 [ sectionBand hovered system ]
 

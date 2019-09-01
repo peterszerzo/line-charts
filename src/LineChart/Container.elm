@@ -30,7 +30,7 @@ import Svg
     chartConfig : LineChart.Config Data Msg
     chartConfig =
       { ...
-      , conatiner = Container.default
+      , container = Container.default
       , ...
       }
 
@@ -53,7 +53,7 @@ default =
 
 {-| The default container configuration, but you decide the margins.
 
-Pass the id and the top, right, bottom, and left margin respectivily.
+Pass the id and the top, right, bottom, and left margin respectively.
 
     customContainer : Container.Config msg
     customContainer =
@@ -129,7 +129,7 @@ type alias Margin =
 containerConfig : Container.Config msg
 containerConfig =
     Container.custom
-        { attributesHtml = [ Html.Attributes.style [ ( "font-family", "monospace" ) ] ]
+        { attributesHtml = [ Html.Attributes.style "font-family" "monospace" ]
         , attributesSvg = []
         , size = Container.static
         , margin = Container.Margin 30 100 60 80

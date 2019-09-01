@@ -1,5 +1,6 @@
 module Ticks exposing (Model, Msg, init, update, view)
 
+import Browser
 import Html
 import LineChart
 import LineChart.Area as Area
@@ -23,10 +24,10 @@ import LineChart.Line as Line
 import Random
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.program
-        { init = init
+    Browser.element
+        { init = \_ -> init
         , update = update
         , view = view
         , subscriptions = always Sub.none
@@ -69,7 +70,7 @@ getNumbers =
         genNumbers min max =
             Random.list 10 (Random.float min max)
     in
-    Random.map3 (,,) (genNumbers 9 12) (genNumbers 7 10) (genNumbers 2 10)
+    Random.map3 (\a b c -> ( a, b, c )) (genNumbers 9 12) (genNumbers 7 10) (genNumbers 2 10)
         |> Random.generate RecieveNumbers
 
 
@@ -172,7 +173,7 @@ xAxisConfig model =
                     "K"
 
                 else
-                    toString x
+                    String.fromFloat x
     in
     Axis.custom
         { title = Title.default "Year"
@@ -188,7 +189,7 @@ yAxisConfig : Model -> Axis.Config Coordinate.Point msg
 yAxisConfig model =
     let
         formatY =
-            toString << round10
+            String.fromFloat << round10
     in
     Axis.custom
         { title = Title.atAxisMax 10 0 "Grade avg."

@@ -1,4 +1,4 @@
-module Docs.LineChart.Example6 exposing (main)
+module Docs.Colors.Example1 exposing (main)
 
 import Html
 import LineChart

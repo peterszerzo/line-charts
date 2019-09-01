@@ -47,7 +47,7 @@ chart =
 containerConfig : Container.Config msg
 containerConfig =
     Container.custom
-        { attributesHtml = [ Html.Attributes.style [ ( "font-family", "monospace" ) ] ]
+        { attributesHtml = [ Html.Attributes.style "font-family" "monospace" ]
         , attributesSvg = []
         , size = Container.static
         , margin = Container.Margin 30 100 60 80

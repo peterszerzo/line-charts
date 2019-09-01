@@ -331,7 +331,7 @@ formatBold unit =
                     [ DateFormat.hourNumber, DateFormat.amPmLowercase ]
 
                 Day ->
-                    [ DateFormat.dayOfWeekNameFull ]
+                    [ DateFormat.dayOfWeekNameAbbreviated ]
 
                 Month ->
                     [ DateFormat.monthNameAbbreviated ]

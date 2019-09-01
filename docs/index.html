@@ -13,9 +13,14 @@
 	<script src="highlight/highlight.pack.js"></script>
 </head>
 <body id="body">
+  <div id="elm"></div>
   <script>
-    var app = Elm.Main.fullscreen();
 
+    var app = Elm.Main.init({
+      node: document.getElementById('elm')
+    })
+
+    // Syntax highlighting of source block
     app.ports.highlight.subscribe(function() {
     	var blocks = document.getElementsByClassName('elm')
     	for (var i = 0; i < blocks.length; i++) {
@@ -23,6 +28,7 @@
       }
     });
 
+    // Disable main page scroll when source view is open
     app.ports.setBodyScroll.subscribe(function(isSourceOpen) {
       var body = document.getElementById('body');
       body.style = ""

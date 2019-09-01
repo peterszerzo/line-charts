@@ -1,5 +1,6 @@
 module Selection1 exposing (main)
 
+import Browser
 import Html
 import LineChart
 import LineChart.Area as Area
@@ -19,7 +20,7 @@ import Svg
 import Svg.Attributes
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
     Browser.sandbox
         { init = init

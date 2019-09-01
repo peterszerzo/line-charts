@@ -1,6 +1,7 @@
 port module Main exposing (Id, Model, Msg(..), highlight, init, main, setBodyScroll, update, view, viewExample, viewSource, viewTitle)
 
 import Area
+import Browser
 import Dict
 import Html
 import Html.Attributes
@@ -87,8 +88,8 @@ type Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case msg of
+update msgArg model =
+    case msgArg of
         Focus id ->
             let
                 isSourceOpen =
@@ -211,14 +212,14 @@ viewTitle =
 
 
 viewExample : Id -> String -> (msg -> Msg) -> (a -> Html.Html msg) -> a -> Html.Html Msg
-viewExample id modifier toMsg view model =
+viewExample id modifier toMsg viewArg model =
     let
         class =
             "view__example__container view__example__container--" ++ modifier
     in
     Html.div
         [ Html.Attributes.class class ]
-        [ Html.map toMsg (Html.Lazy.lazy view model)
+        [ Html.map toMsg (Html.Lazy.lazy viewArg model)
         , Html.button
             [ Html.Attributes.class "view__example__toggle-source"
             , Html.Events.onClick (Focus id)
@@ -281,10 +282,10 @@ port setBodyScroll : Bool -> Cmd msg
 -- Main
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.program
-        { init = init
+    Browser.element
+        { init = \_ -> init
         , update = update
         , subscriptions = always Sub.none
         , view = view

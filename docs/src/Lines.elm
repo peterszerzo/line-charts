@@ -1,5 +1,6 @@
 module Lines exposing (Model, Msg, init, source, update, view)
 
+import Browser
 import Color.Manipulate as Manipulate
 import Html
 import LineChart
@@ -25,6 +26,7 @@ import Random
 import Random.Pipeline
 import Svg
 import Time
+import Time.Extra
 
 
 
@@ -48,7 +50,7 @@ type alias Data =
 
 
 type alias Datum =
-    { time : Time.Time
+    { time : Time.Posix
     , rain : Float
     }
 
@@ -173,11 +175,11 @@ xAxisConfig : Axis.Config Datum Msg
 xAxisConfig =
     Axis.custom
         { title = Title.default "Time"
-        , variable = Just << .time
+        , variable = Just << toFloat << Time.posixToMillis << .time
         , pixels = 1270
         , range = Range.padded 20 20
         , axisLine = AxisLine.none
-        , ticks = Ticks.timeCustom 10 tickTime
+        , ticks = Ticks.timeCustom Time.utc 10 tickTime
         }
 
 
@@ -205,7 +207,7 @@ tickTime time =
             Tick.format time
     in
     Tick.custom
-        { position = time.timestamp
+        { position = toFloat <| Time.posixToMillis <| time.timestamp
         , color = Colors.gray
         , width = 1
         , length = 5
@@ -316,24 +318,25 @@ toData numbers =
     List.indexedMap toDatum numbers
 
 
-indexToTime : Int -> Time.Time
+indexToTime : Int -> Time.Posix
 indexToTime index =
-    Time.hour * 24 * 365 * 30 + xInterval * toFloat index
-
-
-xInterval : Time.Time
-xInterval =
-    Time.hour * 24 * 31
+    -- Every month, starting at Jan 2000
+    Time.Extra.add Time.Extra.Month
+        index
+        Time.utc
+        (Time.Extra.partsToPosix Time.utc <|
+            Time.Extra.Parts 2000 Time.Jan 1 0 0 0 0
+        )
 
 
 
 -- PROGRAM
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.program
-        { init = init
+    Browser.element
+        { init = \_ -> init
         , update = update
         , view = view
         , subscriptions = always Sub.none

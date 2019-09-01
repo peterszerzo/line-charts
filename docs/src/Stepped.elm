@@ -1,9 +1,7 @@
 module Stepped exposing (Model, Msg, init, source, update, view)
 
+import Browser
 import Color.Convert
-import Date
-import Date.Extra
-import Date.Format
 import Html
 import Html.Attributes
 import LineChart
@@ -26,12 +24,13 @@ import LineChart.Legends as Legends
 import LineChart.Line as Line
 import Random
 import Time
+import Time.Extra
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.program
-        { init = init
+    Browser.element
+        { init = \_ -> init
         , update = update
         , view = view
         , subscriptions = always Sub.none
@@ -164,15 +163,15 @@ chart model =
         , x =
             let
                 toDate year =
-                    Date.Extra.fromParts year Date.Jan 1 0 0 0 0
+                    Time.Extra.Parts year Time.Jan 1 0 0 0 0 |> Time.Extra.partsToPosix Time.utc
             in
             Axis.custom
                 { title = Title.default "Year"
-                , variable = Just << Date.toTime << toDate << .year
+                , variable = Just << toFloat << Time.posixToMillis << toDate << .year
                 , pixels = 1270
                 , range = Range.padded 20 20
                 , axisLine = AxisLine.full Colors.gray
-                , ticks = Ticks.time 10
+                , ticks = Ticks.time Time.utc 10
                 }
         , container =
             Container.custom
@@ -188,8 +187,8 @@ chart model =
         , events = Events.hoverOne Hint
         , junk =
             Junk.hoverOne model.hinted
-                [ ( "year", \datum -> toString datum.year )
-                , ( "price", \datum -> toString datum.price ++ "£" )
+                [ ( "year", \datum -> String.fromInt datum.year )
+                , ( "price", \datum -> String.fromFloat datum.price ++ "£" )
                 ]
         , grid = Grid.default
         , area = Area.default

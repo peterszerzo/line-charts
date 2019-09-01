@@ -1,7 +1,7 @@
 module Area exposing (Model, Msg, init, source, update, view)
 
-import Date
-import Date.Format
+import Browser
+import DateFormat
 import Html
 import LineChart
 import LineChart.Area as Area
@@ -20,6 +20,7 @@ import LineChart.Line as Line
 import Random
 import Random.Pipeline
 import Time
+import Time.Extra
 
 
 
@@ -40,7 +41,7 @@ type alias Data =
 
 
 type alias Datum =
-    { time : Time.Time
+    { time : Time.Posix
     , velocity : Float
     }
 
@@ -122,7 +123,7 @@ view model =
 chartConfig : Model -> LineChart.Config Datum Msg
 chartConfig model =
     { y = Axis.default 450 "velocity" .velocity
-    , x = Axis.time 1270 "time" .time
+    , x = Axis.time Time.utc 1270 "time" (toFloat << Time.posixToMillis << .time)
     , container = containerConfig
     , interpolation = Interpolation.monotone
     , intersection = Intersection.default
@@ -149,12 +150,20 @@ containerConfig =
 
 formatX : Datum -> String
 formatX datum =
-    Date.Format.format "%e. %b, %Y" (Date.fromTime datum.time)
+    DateFormat.format
+        [ DateFormat.dayOfMonthSuffix
+        , DateFormat.text ". "
+        , DateFormat.monthNameAbbreviated
+        , DateFormat.text ", "
+        , DateFormat.yearNumber
+        ]
+        Time.utc
+        datum.time
 
 
 formatY : Datum -> String
 formatY datum =
-    toString (round100 datum.velocity) ++ " m/s"
+    String.fromFloat (round100 datum.velocity) ++ " m/s"
 
 
 
@@ -195,31 +204,25 @@ toData numbers =
     List.indexedMap toDatum numbers
 
 
-indexToTime : Int -> Time.Time
+indexToTime : Int -> Time.Posix
 indexToTime index =
-    Time.hour
-        * 24
-        * 365
-        * 45
-        + -- 45 years
-          Time.hour
-        * 24
-        * 30
-        + -- a month
-          Time.hour
-        * 1
-        * toFloat index
+    -- Every 3 hours, starting at Jan 2000
+    Time.Extra.add Time.Extra.Hour
+        (3 * index)
+        Time.utc
+        (Time.Extra.partsToPosix Time.utc <|
+            Time.Extra.Parts 2000 Time.Jan 1 0 0 0 0
+        )
 
 
 
--- hours from first datum
 -- PROGRAM
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.program
-        { init = init
+    Browser.element
+        { init = \_ -> init
         , update = update
         , view = view
         , subscriptions = always Sub.none

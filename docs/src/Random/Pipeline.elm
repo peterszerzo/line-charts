@@ -4,12 +4,13 @@ module Random.Pipeline exposing (generate, send, with)
 -}
 
 import Random
+import Random.Extra
 
 
 {-| -}
 generate : a -> Random.Generator a
 generate f =
-    Random.map (\_ -> f) Random.bool
+    Random.map (\_ -> f) Random.Extra.bool
 
 
 {-| -}

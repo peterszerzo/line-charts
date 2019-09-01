@@ -1,7 +1,7 @@
 module Selection exposing (Model, Msg, init, source, update, view)
 
-import Date
-import Date.Format
+import Browser
+import DateFormat
 import Html
 import Html.Attributes
 import LineChart
@@ -27,12 +27,13 @@ import Random.Pipeline
 import Svg
 import Svg.Attributes
 import Time
+import Time.Extra
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.program
-        { init = init
+    Browser.element
+        { init = \_ -> init
         , update = update
         , view = view
         , subscriptions = always Sub.none
@@ -66,7 +67,7 @@ type alias Data =
 
 
 type alias Datum =
-    { time : Time.Time
+    { time : Time.Posix
     , displacement : Float
     }
 
@@ -112,24 +113,18 @@ toData numbers =
     List.indexedMap toDatum numbers
 
 
-indexToTime : Int -> Time.Time
+indexToTime : Int -> Time.Posix
 indexToTime index =
-    Time.hour
-        * 24
-        * 365
-        * 45
-        + -- 45 years
-          Time.hour
-        * 24
-        * 30
-        + -- a month
-          Time.minute
-        * 15
-        * toFloat index
+    -- Every 15 minutes, starting at Jan 2015
+    Time.Extra.add Time.Extra.Minute
+        (15 * index)
+        Time.utc
+        (Time.Extra.partsToPosix Time.utc <|
+            Time.Extra.Parts 2015 Time.Jan 1 0 0 0 0
+        )
 
 
 
--- hours from first datum
 -- MODEL API
 
 
@@ -307,7 +302,7 @@ viewChartMain model =
         { range = Range.default
         , junk = junkConfig model
         , legends = Legends.default
-        , events = events
+        , events = myEvents
         , width = 670
         , margin = Container.Margin 30 165 30 70
         , dots = Dots.custom (Dots.full 0)
@@ -315,8 +310,8 @@ viewChartMain model =
         }
 
 
-events : Events.Config Datum Msg
-events =
+myEvents : Events.Config Datum Msg
+myEvents =
     let
         options bool =
             { stopPropagation = True
@@ -364,8 +359,8 @@ below system selection =
 
 
 above : Coordinate.System -> Maybe Float -> List (Svg.Svg msg)
-above system hovered =
-    case hovered of
+above system maybeHovered =
+    case maybeHovered of
         Just hovered ->
             [ Junk.vertical system [] hovered
             , title system
@@ -416,12 +411,25 @@ xAxisRangeConfig selection =
 
 formatX : Datum -> String
 formatX datum =
-    Date.Format.format "%l:%M%P, %e. %b, %Y" (Date.fromTime datum.time)
+    DateFormat.format
+        [ DateFormat.hourFixed
+        , DateFormat.text ":"
+        , DateFormat.minuteFixed
+        , DateFormat.amPmLowercase
+        , DateFormat.text ", "
+        , DateFormat.dayOfMonthSuffix
+        , DateFormat.text ". "
+        , DateFormat.monthNameAbbreviated
+        , DateFormat.text ", "
+        , DateFormat.yearNumber
+        ]
+        Time.utc
+        datum.time
 
 
 formatY : Datum -> String
 formatY datum =
-    toString (round100 datum.displacement)
+    String.fromFloat (round100 datum.displacement)
 
 
 
@@ -444,9 +452,9 @@ viewChart : Data -> Config -> Html.Html Msg
 viewChart data { range, junk, events, legends, dots, width, margin, id } =
     let
         containerStyles =
-            [ ( "display", "inline-block" )
-            , ( "width", "50%" )
-            , ( "height", "100%" )
+            [ Html.Attributes.style "display" "inline-block"
+            , Html.Attributes.style "width" "50%"
+            , Html.Attributes.style "height" "100%"
             ]
     in
     LineChart.viewCustom
@@ -462,15 +470,15 @@ viewChart data { range, junk, events, legends, dots, width, margin, id } =
         , x =
             Axis.custom
                 { title = Title.default "time"
-                , variable = Just << .time
+                , variable = Just << toFloat << Time.posixToMillis << .time
                 , pixels = width
                 , range = range
                 , axisLine = AxisLine.rangeFrame Colors.gray
-                , ticks = Ticks.time 5
+                , ticks = Ticks.time Time.utc 5
                 }
         , container =
             Container.custom
-                { attributesHtml = [ Html.Attributes.style containerStyles ]
+                { attributesHtml = containerStyles
                 , attributesSvg = []
                 , size = Container.static
                 , margin = margin
